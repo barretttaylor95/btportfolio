@@ -669,7 +669,7 @@ const primaryGuitars = [
             '4-way switch (adds series option)',
             'Brass saddles'
         ],
-tuning: 'Standard E (E A D G B E)',
+        tuning: 'Standard E (E A D G B E)',
         stringGauge: '10-52',
         primaryUse: 'Texas blues, country blues, twangier applications'
     },
@@ -681,118 +681,4 @@ tuning: 'Standard E (E A D G B E)',
         stringGauge: '12-56',
         primaryUse: 'Slide guitar, Mississippi delta-inspired playing'
     }
-];</code></pre>
-                    </div>
-                </div>
-
-                <!-- Contact Section -->
-                <div class="code-content markdown-content contact-code" id="contactContent">
-                    <div class="markdown-container">
-                        <h1>Let's Connect</h1>
-                        <p>Passionate about technology, AI innovation, and creating meaningful solutions. Always eager to collaborate or discuss emerging technologies.</p>
-
-                        <h2>Contact Information</h2>
-                        <pre><code class="language-javascript">// Preferred Contact Methods
-
-const contactInfo = {
-    email: "barrett.taylor95@gmail.com",
-    linkedin: "linkedin.com/in/barrett-taylor-422237182",
-    github: "github.com/barretttaylor95",
-    linktree: "linktr.ee/barrett.taylor95",
-    responseTime: "Usually within 24 hours"
-};
-
-function getPreferredContactMethod() {
-    return {
-        professional: contactInfo.email,
-        technical: contactInfo.github,
-        networking: contactInfo.linkedin,
-        allLinks: contactInfo.linktree
-    };
-}</code></pre>
-
-                        <h2>Connect With Me</h2>
-                        <ul>
-                            <li><strong>Email:</strong> <a href="mailto:barrett.taylor95@gmail.com">barrett.taylor95@gmail.com</a></li>
-                            <li><strong>LinkedIn:</strong> <a href="https://www.linkedin.com/in/barrett-taylor-422237182/" target="_blank">linkedin.com/in/barrett-taylor-422237182</a></li>
-                            <li><strong>GitHub:</strong> <a href="https://github.com/barretttaylor95" target="_blank">github.com/barretttaylor95</a></li>
-                            <li><strong>Linktree:</strong> <a href="https://linktr.ee/barrett.taylor95" target="_blank">linktr.ee/barrett.taylor95</a></li>
-                        </ul>
-
-                        <p>Use the terminal below to send me a message or view my contact information with commands like <code>contact</code>, <code>github</code>, <code>linkedin</code>, or <code>email</code>.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Terminal (Bottom Panel - Resizable) -->
-        <div class="terminal-panel" id="terminalPanel">
-            <!-- The resize handle needs to be positioned at the top of the terminal panel -->
-            <div class="resize-handle vertical-resize-handle" id="terminalResizeHandle"></div>
-
-            <div class="terminal-header">
-                <div class="terminal-title">Terminal</div>
-                <div class="terminal-tabs">
-                    <div class="terminal-tab active">Local</div>
-                </div>
-            </div>
-            <div class="terminal-content">
-                <div class="terminal-output">Welcome to Barrett Taylor's Interactive CLI.</div>
-                <div class="terminal-output">Type <strong>help</strong> to see available commands.</div>
-                <div class="terminal-prompt">
-                    <span class="terminal-user">guest</span>
-                    <span class="terminal-at">@</span>
-                    <span class="terminal-machine">barrett-portfolio</span>
-                    <span class="terminal-colon">:</span>
-                    <span class="terminal-directory">~</span>
-                    <span class="terminal-symbol">$</span>
-                    <span class="terminal-input" contenteditable="true" spellcheck="false"></span>
-                    <span class="typing-cursor"></span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Status Bar -->
-        <div class="status-bar">
-            <div class="status-item">
-                <i class="fas fa-check-circle"></i>
-                Ready
-            </div>
-            <div class="status-item">
-                <i class="fas fa-code-branch"></i>
-                main
-            </div>
-            <div class="right-status">
-                <div class="status-item">
-                    <span>Markdown</span>
-                </div>
-                <div class="status-item">
-                    <span>UTF-8</span>
-                </div>
-                <div class="status-item">
-                    <span>LF</span>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Script references -->
-<script src="main.js"></script>
-
-<!-- Service Worker Registration -->
-<script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-            navigator.serviceWorker.register('/service-worker.js')
-                .then(function(registration) {
-                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                })
-                .catch(function(err) {
-                    console.log('ServiceWorker registration failed: ', err);
-                });
-        });
-    }
-</script>
-</body>
-</html>
+];

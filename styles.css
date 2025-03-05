@@ -22,6 +22,241 @@
     --scrollbar-thumb: #5e5e5e;
 }
 
+.vertical-resize-handle {
+    cursor: row-resize;
+    height: 5px;
+    left: 0;
+    right: 0;
+    bottom: calc(100% - 2px); /* Position at the TOP of the terminal panel */
+    border-top: 2px solid transparent; /* Thicker clickable area */
+}
+
+/* Improved highlighting of resize handles on hover/active */
+.horizontal-resize-handle:hover,
+.horizontal-resize-handle:active {
+    background-color: rgba(204, 120, 50, 0.5);
+}
+
+.vertical-resize-handle:hover,
+.vertical-resize-handle:active {
+    background-color: rgba(204, 120, 50, 0.5);
+    border-top-color: rgba(204, 120, 50, 0.8);
+}
+
+/* Code syntax highlighting */
+.language-java .keyword,
+.language-javascript .keyword,
+.language-python .keyword {
+    color: var(--code-keyword);
+}
+
+.language-java .string,
+.language-javascript .string,
+.language-python .string {
+    color: var(--code-string);
+}
+
+.language-java .comment,
+.language-javascript .comment,
+.language-python .comment {
+    color: var(--code-comment);
+    font-style: italic;
+}
+
+.language-java .method,
+.language-javascript .method,
+.language-python .method {
+    color: var(--code-method);
+}
+
+.language-java .number,
+.language-javascript .number,
+.language-python .number {
+    color: var(--code-number);
+}
+
+/* Tooltip */
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 120px;
+    background-color: var(--bg-lighter);
+    color: var(--text-primary);
+    text-align: center;
+    border-radius: 4px;
+    padding: 5px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 11px;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Media queries for responsiveness */
+@media (max-width: 768px) {
+    .project-directory {
+        width: 200px;
+    }
+
+    .editor-area {
+        left: 200px;
+    }
+
+    .markdown-container {
+        padding: 15px;
+    }
+}
+
+@media (max-width: 576px) {
+    .project-directory {
+        width: 160px;
+    }
+
+    .editor-area {
+        left: 160px;
+    }
+
+    .markdown-container {
+        padding: 10px;
+    }
+
+    .terminal-panel {
+        height: 150px;
+    }
+}
+
+/* Java Terminal Styles */
+.java-terminal-output {
+    font-family: 'JetBrains Mono', monospace;
+    white-space: pre-wrap;
+}
+
+/* API Demo Styles */
+.api-method-get { color: #6a8759; }
+.api-method-post { color: #cc7832; }
+.api-method-put { color: #9876aa; }
+.api-method-delete { color: #cc0000; }
+
+/* Database Viewer Styles */
+.db-table-card {
+    background-color: #2b2b2b;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+/* Git Viewer Styles */
+.git-commit-node {
+    position: relative;
+    padding-left: 20px;
+}
+
+.git-commit-node::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #6897bb;
+}
+
+/* Build Tools Styles */
+.pipeline-stage {
+    background-color: #214283;
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 5px;
+    text-align: center;
+}
+
+/* Project Demo Styles */
+.demo-container {
+    border: 1px solid #3c3f41;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+/* IDE Tools Styles */
+.tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+/* Code Challenge Styles */
+.challenge-card {
+    background-color: #2b2b2b;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+/* Difficulty Badges */
+.difficulty-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 0.8em;
+    font-weight: bold;
+    color: white;
+}
+
+.difficulty-badge.easy {
+    background-color: #6a8759;
+}
+
+.difficulty-badge.medium {
+    background-color: #cc7832;
+}
+
+.difficulty-badge.hard {
+    background-color: #cc0000;
+}
+
+/* Light Mode Theme */
+body.light-mode {
+    --bg-dark: #ffffff;
+    --bg-darker: #f0f0f0;
+    --bg-lighter: #e8e8e8;
+    --sidebar: #f5f5f5;
+    --text-primary: #2b2b2b;
+    --text-secondary: #1a652e;
+    --text-accent: #b53811;
+    --code-string: #1a652e;
+    --code-keyword: #b53811;
+    --code-comment: #808080;
+    --code-method: #9c5d00;
+    --code-number: #295e91;
+    --border-color: #d1d1d1;
+    --tab-active: #d8d8d8;
+    --scrollbar-track: #e0e0e0;
+    --scrollbar-thumb: #c0c0c0;
+}
+
 html {
     scroll-behavior: smooth;
     scrollbar-width: thin;
@@ -621,119 +856,3 @@ code {
     top: 0;
     bottom: 0;
     right: 0;
-}
-
-.vertical-resize-handle {
-    cursor: row-resize;
-    height: 5px;
-    left: 0;
-    right: 0;
-    bottom: calc(100% - 2px); /* Position at the TOP of the terminal panel */
-    border-top: 2px solid transparent; /* Thicker clickable area */
-}
-
-/* Improved highlighting of resize handles on hover/active */
-.horizontal-resize-handle:hover,
-.horizontal-resize-handle:active {
-    background-color: rgba(204, 120, 50, 0.5);
-}
-
-.vertical-resize-handle:hover,
-.vertical-resize-handle:active {
-    background-color: rgba(204, 120, 50, 0.5);
-    border-top-color: rgba(204, 120, 50, 0.8);
-}
-
-/* Code syntax highlighting */
-.language-java .keyword,
-.language-javascript .keyword,
-.language-python .keyword {
-    color: var(--code-keyword);
-}
-
-.language-java .string,
-.language-javascript .string,
-.language-python .string {
-    color: var(--code-string);
-}
-
-.language-java .comment,
-.language-javascript .comment,
-.language-python .comment {
-    color: var(--code-comment);
-    font-style: italic;
-}
-
-.language-java .method,
-.language-javascript .method,
-.language-python .method {
-    color: var(--code-method);
-}
-
-.language-java .number,
-.language-javascript .number,
-.language-python .number {
-    color: var(--code-number);
-}
-
-/* Tooltip */
-.tooltip {
-    position: relative;
-    display: inline-block;
-}
-
-.tooltip .tooltiptext {
-    visibility: hidden;
-    width: 120px;
-    background-color: var(--bg-lighter);
-    color: var(--text-primary);
-    text-align: center;
-    border-radius: 4px;
-    padding: 5px;
-    position: absolute;
-    z-index: 1;
-    bottom: 125%;
-    left: 50%;
-    transform: translateX(-50%);
-    opacity: 0;
-    transition: opacity 0.3s;
-    font-size: 11px;
-}
-
-.tooltip:hover .tooltiptext {
-    visibility: visible;
-    opacity: 1;
-}
-
-/* Media queries for responsiveness */
-@media (max-width: 768px) {
-    .project-directory {
-        width: 200px;
-    }
-
-    .editor-area {
-        left: 200px;
-    }
-
-    .markdown-container {
-        padding: 15px;
-    }
-}
-
-@media (max-width: 576px) {
-    .project-directory {
-        width: 160px;
-    }
-
-    .editor-area {
-        left: 160px;
-    }
-
-    .markdown-container {
-        padding: 10px;
-    }
-
-    .terminal-panel {
-        height: 150px;
-    }
-}
