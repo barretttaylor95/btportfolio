@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Barrett Taylor | IT Professional & Web Developer</title>
+    <meta name="description" content="Barrett Taylor's portfolio showcasing IT skills, web development projects, and professional experience in a unique IDE-style interface.">
+    <meta name="keywords" content="Barrett Taylor, Web Developer, IT Professional, Portfolio, Java, JavaScript, Python, Spring Boot, React">
+    <meta name="author" content="Barrett Taylor">
+
+    <!-- Favicon and App Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2b2b2b">
+
+    <!-- Preload Critical Assets -->
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style">
+    <link rel="preload" href="styles.css" as="style">
+    <link rel="preload" href="main.js" as="script">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- External Stylesheets -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet">
+</head>
+<body>
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+</div>
+
+<div class="ide-container">
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="window-controls">
+            <div class="window-button close-button"></div>
+            <div class="window-button minimize-button"></div>
+            <div class="window-button maximize-button"></div>
+        </div>
+        <div class="project-name">
+            <div class="project-icon">BT</div>
+            Barrett_Taylor_Portfolio <i class="fas fa-chevron-down fa-xs"></i>
+        </div>
+        <div class="dropdown">
+            main <i class="fas fa-chevron-down fa-xs"></i>
+        </div>
+        <div class="ide-actions">
+            <div class="action-button tooltip">
+                <i class="fas fa-adjust"></i>
+                <span class="tooltiptext">Toggle Theme</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content-area">
+        <!-- Project Directory (Left Panel - Resizable) -->
+        <div class="project-directory" id="projectDirectory">
+            <div class="directory-header">
+                <div class="directory-title">Project</div>
+            </div>
+            <div class="directory-content">
+                <div class="file-tree">
+                    <div class="tree-folder">
+                        <div class="tree-item" onclick="toggleFolder(this)">
+                            <i class="fas fa-chevron-right fa-xs"></i>
+                            <i class="fas fa-folder"></i>
+                            Barrett_Taylor_Portfolio
+                        </div>
+                        <div class="nested-files" style="display: none;">
+                            <div class="tree-file" onclick="activateTab('about.md', 'about')">
+                                <i class="fas fa-file-code markdown-icon"></i>
+                                about.md
+                            </div>
+                            <div class="tree-file" onclick="activateTab('skills.md', 'skills')">
+                                <i class="fas fa-file-code markdown-icon"></i>
+                                skills.md
+                            </div>
+                            <div class="tree-file" onclick="activateTab('projects.md', 'projects')">
+                                <i class="fas fa-file-code markdown-icon"></i>
+                                projects.md
+                            </div>
+                            <div class="tree-file" onclick="activateTab('experience.md', 'experience')">
+                                <i class="fas fa-file-code markdown-icon"></i>
+                                experience.md
+                            </div>
+                            <div class="tree-file" onclick="activateTab('hobbies.md', 'hobbies')">
+                                <i class="fas fa-file-code markdown-icon"></i>
+                                hobbies.md
+                            </div>
+                            <div class="tree-file" onclick="activateTab('contact.md', 'contact')">
+                                <i class="fas fa-file-code markdown-icon"></i>
+                                contact.md
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="resize-handle horizontal-resize-handle" id="directoryResizeHandle"></div>
+        </div>
+
+        <!-- Editor Area (Middle Panel) -->
+        <div class="editor-area" id="editorArea">
+            <div class="editor-tabs">
+                <div class="editor-tab active" id="aboutTab">
+                    <i class="fas fa-file-code markdown-icon"></i>
+                    <span class="tab-title">about.md</span>
+                    <i class="fas fa-times close-tab"></i>
+                </div>
+                <div class="editor-tab" id="skillsTab" style="display: none;">
+                    <i class="fas fa-file-code markdown-icon"></i>
+                    <span class="tab-title">skills.md</span>
+                    <i class="fas fa-times close-tab"></i>
+                </div>
+                <div class="editor-tab" id="projectsTab" style="display: none;">
+                    <i class="fas fa-file-code markdown-icon"></i>
+                    <span class="tab-title">projects.md</span>
+                    <i class="fas fa-times close-tab"></i>
+                </div>
+                <div class="editor-tab" id="experienceTab" style="display: none;">
+                    <i class="fas fa-file-code markdown-icon"></i>
+                    <span class="tab-title">experience.md</span>
+                    <i class="fas fa-times close-tab"></i>
+                </div>
+                <div class="editor-tab" id="hobbiesTab" style="display: none;">
+                    <i class="fas fa-file-code markdown-icon"></i>
+                    <span class="tab-title">hobbies.md</span>
+                    <i class="fas fa-times close-tab"></i>
+                </div>
+                <div class="editor-tab" id="contactTab" style="display: none;">
+                    <i class="fas fa-file-code markdown-icon"></i>
+                    <span class="tab-title">contact.md</span>
+                    <i class="fas fa-times close-tab"></i>
+                </div>
+            </div>
+
+            <div class="editor-content">
+                <!-- About Section -->
+                <div class="code-content markdown-content about-code active" id="aboutContent">
+                    <div class="markdown-container">
+                        <h1>Barrett Taylor</h1>
+                        <h2>IT Professional & Web Developer</h2>
+
+                        <p>Versatile IT professional combining customer service experience with technical troubleshooting and development skills.</p>
+
+                        <h3>About Me</h3>
+                        <p>I'm a versatile IT professional with a deep passion for technological innovation, particularly in the realm of Artificial Intelligence and ethical technology development. My approach to technology is fundamentally about empowerment—creating solutions that augment human capabilities rather than replace human creativity and critical thinking.</p>
+
+                        <h3>Professional Vision</h3>
+                        <p>My work sits at the intersection of software development, AI engineering, and human-centered design. I'm committed to developing intelligent systems that solve real-world problems while maintaining a strict ethical framework. This means creating AI tools that are transparent, accountable, and fundamentally designed to support human potential.</p>
+
+                        <h3>Technical Philosophy</h3>
+                        <ul>
+                            <li>Solve complex problems intelligently</li>
+                            <li>Enhance human decision-making</li>
+                            <li>Maintain absolute transparency</li>
+                            <li>Prioritize ethical considerations</li>
+                            <li>Create meaningful, context-aware interactions</li>
+                        </ul>
+
+                        <h3>Education</h3>
+                        <ul>
+                            <li><strong>LaunchCode</strong> - Web Development, 2025</li>
+                            <li><strong>Saint Louis University</strong> - Bachelor of Arts, Communication</li>
+                        </ul>
+
+                        <h3>Connect With Me</h3>
+                        <ul>
+                            <li><i class="fas fa-envelope"></i> <a href="mailto:barrett.taylor95@gmail.com">barrett.taylor95@gmail.com</a></li>
+                            <li><i class="fab fa-github"></i> <a href="https://github.com/barretttaylor95" target="_blank">github.com/barretttaylor95</a></li>
+                            <li><i class="fab fa-linkedin-in"></i> <a href="https://www.linkedin.com/in/barrett-taylor-422237182/" target="_blank">linkedin.com/in/barrett-taylor-422237182</a></li>
+                            <li><i class="fas fa-link"></i> <a href="https://linktr.ee/barrett.taylor95" target="_blank">linktr.ee/barrett.taylor95</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Skills Section -->
+                <div class="code-content markdown-content skills-code" id="skillsContent">
+                    <div class="markdown-container">
+                        <h1>Technical Skills</h1>
+
+                        <h2>Core Competencies</h2>
+                        <p>Programming language samples showcasing my style and expertise:</p>
+
+                        <h3>Java (Spring Boot API Controller)</h3>
+                        <pre><code class="language-java">package com.petpals.controllers;
+
+import com.petpals.models.Pet;
+import com.petpals.services.PetService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * REST Controller for managing pet resources
+ */
+@RestController
+@RequestMapping("/api/pets")
+public class PetController {
+
+    private final PetService petService;
+
+    @Autowired
+    public PetController(PetService petService) {
+        this.petService = petService;
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Pet>> getAllPets() {
+        return ResponseEntity.ok(petService.findAllPets());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Pet> getPetById(@PathVariable Long id) {
+        return petService.findPetById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping
+    public ResponseEntity<Pet> createPet(@RequestBody Pet pet) {
+        return ResponseEntity.ok(petService.savePet(pet));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Pet> updatePet(@PathVariable Long id, @RequestBody Pet pet) {
+        pet.setId(id);
+        return ResponseEntity.ok(petService.updatePet(pet));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletePet(@PathVariable Long id) {
+        petService.deletePet(id);
+        return ResponseEntity.noContent().build();
+    }
+}</code></pre>
+
+                        <h3>JavaScript (React Component with Hooks)</h3>
+                        <pre><code class="language-javascript">import React, { useState, useEffect } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import axios from 'axios';
+
+/**
+ * Component to display pet health statistics over time
+ */
+const PetHealthChart = ({ petId }) => {
+  const [healthData, setHealthData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchHealthData = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(`/api/pets/${petId}/health-records`);
+
+        // Process and format the data for the chart
+        const formattedData = response.data.map(record => ({
+          date: new Date(record.checkupDate).toLocaleDateString(),
+          weight: record.weight,
+          heartRate: record.heartRate,
+          temperature: record.temperature
+        }));
+
+        setHealthData(formattedData);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching pet health data:', err);
+        setError('Failed to load health data. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHealthData();
+  }, [petId]);
+
+  if (loading) return <div>Loading health data...</div>;
+  if (error) return <div>Error: {error}</div>;
+  if (healthData.length === 0) return <div>No health records available.</div>;
+
+  return (
+    <div>
+      <h3>Pet Health Trends</h3>
+      <LineChart width={600} height={300} data={healthData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="date" />
+        <YAxis yAxisId="left" orientation="left" />
+        <YAxis yAxisId="right" orientation="right" />
+        <Tooltip />
+        <Legend />
+        <Line yAxisId="left" type="monotone" dataKey="weight" stroke="#8884d8" activeDot={{ r: 8 }} />
+        <Line yAxisId="right" type="monotone" dataKey="heartRate" stroke="#82ca9d" />
+        <Line yAxisId="right" type="monotone" dataKey="temperature" stroke="#ffc658" />
+      </LineChart>
+    </div>
+  );
+};
+
+export default PetHealthChart;</code></pre>
+
+                        <h3>Python (Data Analysis)</h3>
+                        <pre><code class="language-python">import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
+
+# Load and analyze pet health data
+def analyze_pet_health_data(data_file):
+    """
+    Analyze pet health data to identify trends and make predictions.
+
+    Parameters:
+    data_file (str): Path to the CSV file containing pet health data
+
+    Returns:
+    dict: Analysis results and model metrics
+    """
+    # Load the data
+    df = pd.read_csv(data_file)
+
+    # Data exploration
+    print(f"Dataset shape: {df.shape}")
+    print("\nData overview:")
+    print(df.describe())
+
+    # Check for missing values
+    missing_values = df.isnull().sum()
+    if missing_values.sum() > 0:
+        print("\nMissing values:")
+        print(missing_values[missing_values > 0])
+
+        # Fill missing values with appropriate methods
+        df['weight'] = df['weight'].fillna(df['weight'].mean())
+        df['age'] = df['age'].fillna(df['age'].median())
+
+    # Visualize weight distribution by pet type
+    plt.figure(figsize=(10, 6))
+    sns.boxplot(x='pet_type', y='weight', data=df)
+    plt.title('Weight Distribution by Pet Type')
+    plt.savefig('weight_distribution.png')
+
+    # Correlation analysis
+    correlation = df.corr()
+    plt.figure(figsize=(12, 8))
+    sns.heatmap(correlation, annot=True, cmap='coolwarm')
+    plt.title('Correlation Matrix')
+    plt.savefig('correlation_matrix.png')
+
+    # Predictive modeling - Predict pet weight based on age and other features
+    features = df[['age', 'height', 'length']]
+    target = df['weight']
+
+    # Split the data
+    X_train, X_test, y_train, y_test = train_test_split(
+        features, target, test_size=0.2, random_state=42
+    )
+
+    # Train a linear regression model
+    model = LinearRegression()
+    model.fit(X_train, y_train)
+
+    # Make predictions
+    y_pred = model.predict(X_test)
+
+    # Evaluate the model
+    mse = mean_squared_error(y_test, y_pred)
+    r2 = r2_score(y_test, y_pred)
+
+    # Feature importance
+    feature_importance = pd.DataFrame({
+        'Feature': features.columns,
+        'Importance': model.coef_
+    }).sort_values('Importance', ascending=False)
+
+    # Return results
+    return {
+        'dataset_shape': df.shape,
+        'model_mse': mse,
+        'model_r2': r2,
+        'feature_importance': feature_importance.to_dict(),
+        'pet_type_counts': df['pet_type'].value_counts().to_dict()
+    }
+
+# Example usage
+if __name__ == '__main__':
+    results = analyze_pet_health_data('pet_health_data.csv')
+    print(f"\nModel Results:\nMSE: {results['model_mse']:.2f}\nR²: {results['model_r2']:.2f}")
+    print("\nFeature Importance:")
+    for feature, importance in zip(
+        results['feature_importance']['Feature'],
+        results['feature_importance']['Importance']
+    ):
+        print(f"{feature}: {importance:.4f}")</code></pre>
+                    </div>
+                </div>
+
+                <!-- Projects Section -->
+                <div class="code-content markdown-content projects-code" id="projectsContent">
+                    <div class="markdown-container">
+                        <h1>Featured Projects</h1>
+
+                        <h2>PetPals - Capstone Project</h2>
+                        <p>Full-stack web application developed during the LaunchCode program, designed to help pet owners manage their pets' health records and care needs.</p>
+
+                        <h3>Architecture</h3>
+                        <pre><code>// PetPals Application Architecture
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                        CLIENT (React Frontend)                       │
+└───────────────────────────┬─────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      Spring Boot REST API                            │
+│                                                                     │
+│  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐  │
+│  │   Controllers   │◄──►│    Services     │◄──►│  Repositories   │  │
+│  └─────────────────┘    └─────────────────┘    └────────┬────────┘  │
+│                                                         │           │
+└─────────────────────────────────────────────────────────┼───────────┘
+                                                          │
+                                                          ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                         MySQL Database                              │
+│                                                                     │
+│  ┌─────────────┐  ┌─────────────┐  ┌────────────┐  ┌─────────────┐  │
+│  │    Pets     │  │   Owners    │  │  Health    │  │ Medication  │  │
+│  │    Table    │  │   Table     │  │  Records   │  │   Table     │  │
+│  └─────────────┘  └─────────────┘  └────────────┘  └─────────────┘  │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘</code></pre>
+
+                        <h3>Key Features</h3>
+                        <ul>
+                            <li>Pet health records management</li>
+                            <li>Interactive symptom tracking</li>
+                            <li>Medication scheduling & reminders</li>
+                            <li>Veterinary appointment management</li>
+                            <li>Offline-capable Progressive Web App</li>
+                        </ul>
+
+                        <h3>Technical Challenges</h3>
+                        <ul>
+                            <li>Complex data synchronization</li>
+                            <li>Secure user authentication</li>
+                            <li>Real-time notifications</li>
+                            <li>Mobile responsiveness</li>
+                            <li>Offline data persistence</li>
+                        </ul>
+
+                        <h2>Church Website Template</h2>
+                        <p>Modern, responsive website template designed for local churches with easy content management and customization options.</p>
+
+                        <h3>Template Features</h3>
+                        <ul>
+                            <li>Responsive mobile-first design</li>
+                            <li>Modern aesthetic with customizable colors</li>
+                            <li>Sermon archives with audio player</li>
+                            <li>Events calendar with registration</li>
+                            <li>Integrated donation system</li>
+                            <li>Contact form with Google Maps</li>
+                            <li>Photo gallery with lightbox</li>
+                            <li>SEO-optimized structure</li>
+                        </ul>
+
+                        <h2>IT Documentation System</h2>
+                        <p>Standardized technical documentation framework to streamline training and support procedures.</p>
+
+                        <h3>Documentation Structure</h3>
+                        <ol>
+                            <li><strong>System Overview</strong>
+                                <ul>
+                                    <li>System Architecture</li>
+                                    <li>Component Relationships</li>
+                                    <li>Infrastructure Diagram</li>
+                                    <li>Technical Specifications</li>
+                                </ul>
+                            </li>
+                            <li><strong>Installation & Configuration</strong>
+                                <ul>
+                                    <li>Prerequisites</li>
+                                    <li>Step-by-Step Installation Guide</li>
+                                    <li>Configuration Parameters</li>
+                                    <li>Post-Installation Verification</li>
+                                </ul>
+                            </li>
+                            <li><strong>User Guide</strong>
+                                <ul>
+                                    <li>Basic Operations</li>
+                                    <li>Advanced Features</li>
+                                    <li>Troubleshooting Common Issues</li>
+                                    <li>FAQ Section</li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- Experience Section -->
+                <div class="code-content markdown-content experience-code" id="experienceContent">
+                    <div class="markdown-container">
+                        <h1>Professional Experience</h1>
+
+                        <h2>Bar Manager | Grace Meat +3</h2>
+                        <p><em>August 2022 - May 2023</em></p>
+                        <p>Management position focused on inventory tracking, staff training, and system documentation.</p>
+
+                        <h3>Key Responsibilities</h3>
+                        <ul>
+                            <li>Managed daily bar operations for team of 3 bartenders</li>
+                            <li>Tracked inventory through POS system</li>
+                            <li>Maintained documentation of system procedures</li>
+                            <li>Trained staff on operational protocols</li>
+                            <li>Ensured accurate cash handling and system reconciliation</li>
+                        </ul>
+
+                        <h3>Key Achievements</h3>
+                        <ul>
+                            <li>Reduced inventory costs by 15% through improved tracking</li>
+                            <li>Created standardized training manual for new employees</li>
+                            <li>Optimized POS system configuration for faster service</li>
+                            <li>Improved cash handling accuracy by implementing daily reconciliation processes</li>
+                        </ul>
+
+                        <h2>Barista/Systems Support | Hartford Coffee Company</h2>
+                        <p><em>June 2017 - December 2018</em></p>
+                        <p>Combined customer service role with technical system support and documentation.</p>
+
+                        <h3>Key Responsibilities</h3>
+                        <ul>
+                            <li>Provided excellent customer service</li>
+                            <li>Performed regular POS system maintenance</li>
+                            <li>Created standardized technical documentation</li>
+                            <li>Coordinated multiple concurrent projects</li>
+                            <li>Trained new employees on systems and procedures</li>
+                        </ul>
+
+                        <h3>Technical Skills Applied</h3>
+                        <ul>
+                            <li>POS System Administration</li>
+                            <li>Technical Documentation</li>
+                            <li>Basic Networking</li>
+                            <li>Training & Development</li>
+                            <li>Troubleshooting Methodology</li>
+                        </ul>
+
+                        <h2>Audio Engineer | Jupiter Studios</h2>
+                        <p><em>August 2016 - May 2017</em></p>
+                        <p>Sound engineering role focused on audio equipment configuration and recording optimization.</p>
+
+                        <h3>Key Responsibilities</h3>
+                        <ul>
+                            <li>Arranged microphones and audio equipment for optimal recording quality</li>
+                            <li>Configured mixing boards and pre-amplifiers</li>
+                            <li>Promoted from assistant to lead engineer</li>
+                            <li>Managed full recording sessions</li>
+                            <li>Collaborated with assistant engineers</li>
+                        </ul>
+
+                        <h3>Technical Skills Applied</h3>
+                        <ul>
+                            <li>Signal Flow & Routing</li>
+                            <li>Digital Audio Workstation (Pro Tools)</li>
+                            <li>Microphone Technique & Placement</li>
+                            <li>Analog & Digital Recording Equipment</li>
+                            <li>Critical Listening & Analysis</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Hobbies Section (Combined drone and music content) -->
+                <div class="code-content markdown-content hobbies-code" id="hobbiesContent">
+                    <div class="markdown-container">
+                        <h1>Hobbies & Interests</h1>
+
+                        <h2>Drone Certification Journey</h2>
+                        <p>Pursuing FAA commercial drone pilot license to expand professional capabilities and create new opportunities.</p>
+
+                        <h3>FAA Part 107 Certification Plan</h3>
+                        <p>Study areas include:</p>
+                        <ol>
+                            <li><strong>FAA Regulations</strong>
+                                <ul>
+                                    <li>Part 107 requirements and limitations</li>
+                                    <li>Remote Pilot certification process</li>
+                                    <li>Registration requirements</li>
+                                    <li>Waiver applications and special permissions</li>
+                                </ul>
+                            </li>
+                            <li><strong>Airspace Classification</strong>
+                                <ul>
+                                    <li>Classes A, B, C, D, E, and G airspace</li>
+                                    <li>Special use airspace and restricted areas</li>
+                                    <li>Sectional charts interpretation</li>
+                                    <li>LAANC and authorization procedures</li>
+                                </ul>
+                            </li>
+                            <li><strong>Weather & Micrometeorology</strong>
+                                <ul>
+                                    <li>METARs and TAFs interpretation</li>
+                                    <li>Weather phenomena affecting drone operations</li>
+                                    <li>Density altitude and performance implications</li>
+                                    <li>Local microclimate considerations</li>
+                                </ul>
+                            </li>
+                        </ol>
+
+                        <h3>Commercial Applications</h3>
+                        <ul>
+                            <li><strong>Real Estate:</strong> Aerial property photography, virtual property tours, land surveys</li>
+                            <li><strong>Event Coverage:</strong> Weddings, sports, corporate events, festival footage</li>
+                            <li><strong>Inspection Services:</strong> Roof inspections, infrastructure assessment, solar panel monitoring</li>
+                            <li><strong>Creative Media:</strong> Short films, promotional videos, music videos, artistic photography</li>
+                        </ul>
+
+                        <h2>Musical Journey</h2>
+                        <p>Lifelong passion for music spanning multiple instruments with a focus on raw, authentic blues and rock expression.</p>
+
+                        <h3>Instrumental Repertoire</h3>
+                        <ul>
+                            <li><strong>Guitar:</strong> Primary instrument, focus on blues, slide, and rock techniques</li>
+                            <li><strong>Drums:</strong> Self-taught with emphasis on groove and feel</li>
+                            <li><strong>Bass:</strong> Rhythm section foundation, blues and funk styles</li>
+                            <li><strong>Piano:</strong> Basic accompaniment and compositional tool</li>
+                            <li><strong>Vocals:</strong> Blues and rock singing style</li>
+                        </ul>
+
+                        <h3>Musical Influences</h3>
+                        <ul>
+                            <li><strong>Blues:</strong> Hound Dog Taylor, Muddy Waters, Magic Sam</li>
+                            <li><strong>Psychedelic Rock:</strong> Cream, Led Zeppelin, Jimi Hendrix</li>
+                            <li><strong>Chicago Blues:</strong> Howlin' Wolf, Buddy Guy, Jimmy Reed</li>
+                            <li><strong>Modern Artists:</strong> The White Stripes, Black Keys, Gary Clark Jr.</li>
+                        </ul>
+
+                        <h3>Equipment Setup</h3>
+                        <pre><code class="language-javascript">// Blues Guitar Rig Configuration
+// Primary Setup for Live Performance & Recording
+
+const primaryGuitars = [
+    {
+        model: 'Epiphone Casino',
+        year: '2019',
+        modifications: [
+            'Seymour Duncan P-90 pickups',
+            'CTS pots upgrade',
+            'Bone nut'
+        ],
+        tuning: 'Standard E (E A D G B E)',
+        stringGauge: '11-49',
+        primaryUse: 'Chicago electric blues, rock, general playing'
+    },
+    {
+        model: 'Fender Telecaster',
+        year: '2017',
+        modifications: [
+            'Fender Twisted Tele neck pickup',
+            '4-way switch (adds series option)',
+            'Brass saddles'
+        ],
+tuning: 'Standard E (E A D G B E)',
+        stringGauge: '10-52',
+        primaryUse: 'Texas blues, country blues, twangier applications'
+    },
+    {
+        model: 'Gretsch Electromatic',
+        year: '2021',
+        modifications: ['Stock configuration'],
+        tuning: 'Open G (D G D G B D)',
+        stringGauge: '12-56',
+        primaryUse: 'Slide guitar, Mississippi delta-inspired playing'
+    }
+];</code></pre>
+                    </div>
+                </div>
+
+                <!-- Contact Section -->
+                <div class="code-content markdown-content contact-code" id="contactContent">
+                    <div class="markdown-container">
+                        <h1>Let's Connect</h1>
+                        <p>Passionate about technology, AI innovation, and creating meaningful solutions. Always eager to collaborate or discuss emerging technologies.</p>
+
+                        <h2>Contact Information</h2>
+                        <pre><code class="language-javascript">// Preferred Contact Methods
+
+const contactInfo = {
+    email: "barrett.taylor95@gmail.com",
+    linkedin: "linkedin.com/in/barrett-taylor-422237182",
+    github: "github.com/barretttaylor95",
+    linktree: "linktr.ee/barrett.taylor95",
+    responseTime: "Usually within 24 hours"
+};
+
+function getPreferredContactMethod() {
+    return {
+        professional: contactInfo.email,
+        technical: contactInfo.github,
+        networking: contactInfo.linkedin,
+        allLinks: contactInfo.linktree
+    };
+}</code></pre>
+
+                        <h2>Connect With Me</h2>
+                        <ul>
+                            <li><strong>Email:</strong> <a href="mailto:barrett.taylor95@gmail.com">barrett.taylor95@gmail.com</a></li>
+                            <li><strong>LinkedIn:</strong> <a href="https://www.linkedin.com/in/barrett-taylor-422237182/" target="_blank">linkedin.com/in/barrett-taylor-422237182</a></li>
+                            <li><strong>GitHub:</strong> <a href="https://github.com/barretttaylor95" target="_blank">github.com/barretttaylor95</a></li>
+                            <li><strong>Linktree:</strong> <a href="https://linktr.ee/barrett.taylor95" target="_blank">linktr.ee/barrett.taylor95</a></li>
+                        </ul>
+
+                        <p>Use the terminal below to send me a message or view my contact information with commands like <code>contact</code>, <code>github</code>, <code>linkedin</code>, or <code>email</code>.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Terminal (Bottom Panel - Resizable) -->
+        <div class="terminal-panel" id="terminalPanel">
+            <!-- The resize handle needs to be positioned at the top of the terminal panel -->
+            <div class="resize-handle vertical-resize-handle" id="terminalResizeHandle"></div>
+
+            <div class="terminal-header">
+                <div class="terminal-title">Terminal</div>
+                <div class="terminal-tabs">
+                    <div class="terminal-tab active">Local</div>
+                </div>
+            </div>
+            <div class="terminal-content">
+                <div class="terminal-output">Welcome to Barrett Taylor's Interactive CLI.</div>
+                <div class="terminal-output">Type <strong>help</strong> to see available commands.</div>
+                <div class="terminal-prompt">
+                    <span class="terminal-user">guest</span>
+                    <span class="terminal-at">@</span>
+                    <span class="terminal-machine">barrett-portfolio</span>
+                    <span class="terminal-colon">:</span>
+                    <span class="terminal-directory">~</span>
+                    <span class="terminal-symbol">$</span>
+                    <span class="terminal-input" contenteditable="true" spellcheck="false"></span>
+                    <span class="typing-cursor"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-item">
+                <i class="fas fa-check-circle"></i>
+                Ready
+            </div>
+            <div class="status-item">
+                <i class="fas fa-code-branch"></i>
+                main
+            </div>
+            <div class="right-status">
+                <div class="status-item">
+                    <span>Markdown</span>
+                </div>
+                <div class="status-item">
+                    <span>UTF-8</span>
+                </div>
+                <div class="status-item">
+                    <span>LF</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script references -->
+<script src="main.js"></script>
+
+<!-- Service Worker Registration -->
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(function(registration) {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                })
+                .catch(function(err) {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+        });
+    }
+</script>
+</body>
+</html>
