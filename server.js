@@ -67,8 +67,9 @@ app.use(express.static(path.join(__dirname), {
       res.setHeader('Content-Type', MIME_TYPES[ext]);
     }
 
-    // Ensure proper MIME types for module js files
-    if (ext === '.js' && filePath.includes('/features/')) {
+    // Special handling for JavaScript modules
+    if (ext === '.js') {
+      // Ensure all JavaScript files have the proper MIME type
       res.setHeader('Content-Type', 'application/javascript');
     }
 

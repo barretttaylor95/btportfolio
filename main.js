@@ -1,3 +1,30 @@
+// Fix import section - define import variables but handle missing modules gracefully
+let javaTerminal, apiDemo, databaseViewer, gitViewer, buildTools, projectDemo, ideTools, codeChallenge;
+
+// Safely import modules
+try {
+    // Import modules with dynamic import to handle failures gracefully
+    Promise.all([
+        import('./features/java-terminal.js'),
+        import('./features/api-demo.js'),
+        import('./features/db-viewer.js'),
+        import('./features/git-viewer.js'),
+        import('./features/build-tools.js'),
+        import('./features/project-demo.js'),
+        import('./features/ide-tools.js'),
+        import('./features/code-challenge.js')
+    ]).then(modules => {
+        [javaTerminal, apiDemo, databaseViewer, gitViewer, buildTools, projectDemo, ideTools, codeChallenge] =
+            modules.map(m => m.default);
+        console.log("All modules loaded successfully");
+    }).catch(error => {
+        console.warn("Some modules failed to load:", error);
+    });
+} catch (e) {
+    console.warn("Error loading modules:", e);
+}
+
+// Rest of the existing main.js code stays the same
 // Global variables for panel sizes
 let directoryWidth = 250;
 let terminalHeight = 200;
@@ -12,16 +39,6 @@ let isDarkMode = true; // Default to dark mode
 let currentTerminalInput = ''; // Store current user terminal input
 let commandHistory = []; // Store command history
 let historyIndex = -1; // Current position in command history
-
-// Import feature modules
-import javaTerminal from './features/java-terminal.js';
-import apiDemo from './features/api-demo.js';
-import databaseViewer from './features/db-viewer.js';
-import gitViewer from './features/git-viewer.js';
-import buildTools from './features/build-tools.js';
-import projectDemo from './features/project-demo.js';
-import ideTools from './features/ide-tools.js';
-import codeChallenge from './features/code-challenge.js';
 
 // Safe localStorage wrapper function to handle private browsing mode
 function safeLocalStorage(action, key, value) {
@@ -323,35 +340,85 @@ function updatePanelSizes() {
 
 // Advanced feature command handlers
 function enterJavaMode() {
-    javaTerminal.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+    if (javaTerminal) {
+        javaTerminal.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+    } else {
+        displayModuleErrorMessage('Java Terminal module', document.querySelector('.terminal-content'));
+    }
 }
 
 function showApiDemo() {
-    apiDemo.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+    if (apiDemo) {
+        apiDemo.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+    } else {
+        displayModuleErrorMessage('API Demo module', document.querySelector('.terminal-content'));
+    }
 }
 
 function showDatabaseViewer() {
-    databaseViewer.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+    if (databaseViewer) {
+        databaseViewer.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+    } else {
+        displayModuleErrorMessage('Database Viewer module', document.querySelector('.terminal-content'));
+    }
 }
 
 function showGitViewer() {
-    gitViewer.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+    if (gitViewer) {
+        gitViewer.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+    } else {
+        displayModuleErrorMessage('Git Viewer module', document.querySelector('.terminal-content'));
+    }
 }
 
 function showBuildTools() {
-    buildTools.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+    if (buildTools) {
+        buildTools.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+    } else {
+        displayModuleErrorMessage('Build Tools module', document.querySelector('.terminal-content'));
+    }
 }
 
 function showProjectDemo() {
-    projectDemo.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+    if (projectDemo) {
+        projectDemo.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+    } else {
+        displayModuleErrorMessage('Project Demo module', document.querySelector('.terminal-content'));
+    }
 }
 
 function showDevelopmentTools() {
-    ideTools.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+    if (ideTools) {
+        ideTools.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+    } else {
+        displayModuleErrorMessage('IDE Tools module', document.querySelector('.terminal-content'));
+    }
 }
 
 function startCodingChallenge() {
-    codeChallenge.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+    if (codeChallenge) {
+        codeChallenge.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+    } else {
+        displayModuleErrorMessage('Code Challenge module', document.querySelector('.terminal-content'));
+    }
+}
+
+// Display error message for missing modules
+function displayModuleErrorMessage(moduleName, terminal) {
+    if (!terminal) return;
+
+    const output = document.createElement('div');
+    output.className = 'terminal-output';
+    output.innerHTML = `<span style="color: #cc0000;">Error: ${moduleName} could not be loaded. Please check your network connection or try again later.</span>`;
+
+    const lastPrompt = terminal.querySelector('.terminal-prompt:last-child');
+    if (lastPrompt) {
+        terminal.insertBefore(output, lastPrompt);
+    } else {
+        terminal.appendChild(output);
+    }
+
+    terminal.scrollTop = terminal.scrollHeight;
 }
 
 // Interactive Terminal Functionality
@@ -361,21 +428,21 @@ function processTerminalCommand(command) {
         if (!terminal) return;
 
         // Check if any advanced mode is active
-        if (javaTerminal.isActive()) {
+        if (javaTerminal && javaTerminal.isActive()) {
             return javaTerminal.processInput(command, terminal, document.getElementById('editorArea'));
-        } else if (apiDemo.isActive()) {
+        } else if (apiDemo && apiDemo.isActive()) {
             return apiDemo.processInput(command, terminal, document.getElementById('editorArea'));
-        } else if (databaseViewer.isActive()) {
+        } else if (databaseViewer && databaseViewer.isActive()) {
             return databaseViewer.processInput(command, terminal, document.getElementById('editorArea'));
-        } else if (gitViewer.isActive()) {
+        } else if (gitViewer && gitViewer.isActive()) {
             return gitViewer.processInput(command, terminal, document.getElementById('editorArea'));
-        } else if (buildTools.isActive()) {
+        } else if (buildTools && buildTools.isActive()) {
             return buildTools.processInput(command, terminal, document.getElementById('editorArea'));
-        } else if (projectDemo.isActive()) {
+        } else if (projectDemo && projectDemo.isActive()) {
             return projectDemo.processInput(command, terminal, document.getElementById('editorArea'));
-        } else if (ideTools.isActive()) {
+        } else if (ideTools && ideTools.isActive()) {
             return ideTools.processInput(command, terminal, document.getElementById('editorArea'));
-        } else if (codeChallenge.isActive()) {
+        } else if (codeChallenge && codeChallenge.isActive()) {
             return codeChallenge.processInput(command, terminal, document.getElementById('editorArea'));
         }
 
@@ -892,3 +959,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 500);
             }, 500);
         }
+    } catch (error) {
+        console.error('Error initializing application:', error);
+    }
+});
