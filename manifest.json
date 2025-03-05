@@ -1,7 +1,7 @@
 {
-  "name": "Barrett Taylor Portfolio",
+  "name": "Barrett Taylor IDE Portfolio",
   "short_name": "BT Portfolio",
-  "description": "Barrett Taylor's personal portfolio website showcasing IT and web development skills",
+  "description": "Barrett Taylor's interactive IDE-style portfolio with coding features",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#2b2b2b",
@@ -42,21 +42,21 @@
   "screenshots": [],
   "shortcuts": [
     {
-      "name": "About",
-      "short_name": "About",
-      "description": "View Barrett Taylor's profile",
-      "url": "/#about"
+      "name": "Java Terminal",
+      "short_name": "Java",
+      "description": "Open Java terminal",
+      "url": "/#java"
     },
     {
       "name": "Projects",
       "short_name": "Projects",
-      "description": "View Barrett Taylor's projects",
+      "description": "View projects",
       "url": "/#projects"
     },
     {
       "name": "Contact",
       "short_name": "Contact",
-      "description": "Contact Barrett Taylor",
+      "description": "Contact Barrett",
       "url": "/#contact"
     }
   ]

@@ -13,6 +13,16 @@ let currentTerminalInput = ''; // Store current user terminal input
 let commandHistory = []; // Store command history
 let historyIndex = -1; // Current position in command history
 
+// Import feature modules
+import javaTerminal from './features/java-terminal.js';
+import apiDemo from './features/api-demo.js';
+import databaseViewer from './features/db-viewer.js';
+import gitViewer from './features/git-viewer.js';
+import buildTools from './features/build-tools.js';
+import projectDemo from './features/project-demo.js';
+import ideTools from './features/ide-tools.js';
+import codeChallenge from './features/code-challenge.js';
+
 // Safe localStorage wrapper function to handle private browsing mode
 function safeLocalStorage(action, key, value) {
     try {
@@ -311,16 +321,86 @@ function updatePanelSizes() {
     }
 }
 
+// Advanced feature command handlers
+function enterJavaMode() {
+    javaTerminal.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+}
+
+function showApiDemo() {
+    apiDemo.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+}
+
+function showDatabaseViewer() {
+    databaseViewer.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+}
+
+function showGitViewer() {
+    gitViewer.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+}
+
+function showBuildTools() {
+    buildTools.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+}
+
+function showProjectDemo() {
+    projectDemo.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+}
+
+function showDevelopmentTools() {
+    ideTools.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+}
+
+function startCodingChallenge() {
+    codeChallenge.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+}
+
 // Interactive Terminal Functionality
 function processTerminalCommand(command) {
     try {
         const terminal = document.querySelector('.terminal-content');
         if (!terminal) return;
 
+        // Check if any advanced mode is active
+        if (javaTerminal.isActive()) {
+            return javaTerminal.processInput(command, terminal, document.getElementById('editorArea'));
+        } else if (apiDemo.isActive()) {
+            return apiDemo.processInput(command, terminal, document.getElementById('editorArea'));
+        } else if (databaseViewer.isActive()) {
+            return databaseViewer.processInput(command, terminal, document.getElementById('editorArea'));
+        } else if (gitViewer.isActive()) {
+            return gitViewer.processInput(command, terminal, document.getElementById('editorArea'));
+        } else if (buildTools.isActive()) {
+            return buildTools.processInput(command, terminal, document.getElementById('editorArea'));
+        } else if (projectDemo.isActive()) {
+            return projectDemo.processInput(command, terminal, document.getElementById('editorArea'));
+        } else if (ideTools.isActive()) {
+            return ideTools.processInput(command, terminal, document.getElementById('editorArea'));
+        } else if (codeChallenge.isActive()) {
+            return codeChallenge.processInput(command, terminal, document.getElementById('editorArea'));
+        }
+
         const output = document.createElement('div');
         output.className = 'terminal-output';
 
+        // Define advanced command handlers
+        const advancedCommands = {
+            'java': enterJavaMode,
+            'api': showApiDemo,
+            'database': showDatabaseViewer,
+            'git': showGitViewer,
+            'build': showBuildTools,
+            'demos': showProjectDemo,
+            'tools': showDevelopmentTools,
+            'challenge': startCodingChallenge
+        };
+
         // Process different commands
+        if (advancedCommands[command.toLowerCase().trim()]) {
+            // Handle advanced mode commands
+            advancedCommands[command.toLowerCase().trim()]();
+            return;
+        }
+
         switch (command.toLowerCase().trim()) {
             case 'help':
                 output.innerHTML = `
@@ -337,6 +417,16 @@ Available commands:
   email       - Send me an email
   message     - Send me a message
   clear       - Clear the terminal
+
+  // Advanced features
+  java        - Enter Java REPL mode
+  api         - Launch API demo interface
+  database    - Open database schema viewer
+  git         - View Git commit history
+  build       - Show build pipeline visualization
+  demos       - Access live project demos
+  tools       - View development tools showcase
+  challenge   - Try coding challenges
 `;
                 break;
 
@@ -700,6 +790,36 @@ function applySyntaxHighlighting() {
     });
 }
 
+// Setup terminal command handler for links in the editor
+function setupTerminalCommandHandler() {
+    // Make sure we don't define it twice
+    if (!window.terminalProcessCommand) {
+        window.terminalProcessCommand = function(command) {
+            const terminal = document.querySelector('.terminal-content');
+            if (!terminal) return;
+
+            // Find the input element
+            const inputElement = terminal.querySelector('.terminal-prompt:last-child .terminal-input');
+            if (!inputElement) return;
+
+            // Set the command text
+            inputElement.textContent = command;
+
+            // Create and dispatch an Enter key event
+            const event = new KeyboardEvent('keydown', {
+                key: 'Enter',
+                code: 'Enter',
+                keyCode: 13,
+                which: 13,
+                bubbles: true,
+                cancelable: true
+            });
+
+            inputElement.dispatchEvent(event);
+        };
+    }
+}
+
 // Initialize on document load
 document.addEventListener('DOMContentLoaded', function() {
     try {
@@ -739,6 +859,9 @@ document.addEventListener('DOMContentLoaded', function() {
             showSection(savedTab || 'about');
         }
 
+        // Setup terminal command handler for editor links
+        setupTerminalCommandHandler();
+
         // Set up interactive terminal
         setupInteractiveTerminal();
 
@@ -769,21 +892,3 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 500);
             }, 500);
         }
-
-    } catch (error) {
-        console.error('Error in DOMContentLoaded:', error);
-    }
-});
-
-// Register service worker if browser supports it
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-        navigator.serviceWorker.register('/service-worker.js')
-            .then(function(registration) {
-                console.log('ServiceWorker registration successful with scope: ', registration.scope);
-            })
-            .catch(function(err) {
-                console.log('ServiceWorker registration failed: ', err);
-            });
-    });
-}

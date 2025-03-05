@@ -4,9 +4,13 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const compression = require('compression');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Use compression middleware
+app.use(compression());
 
 // MIME type mapping
 const MIME_TYPES = {
@@ -39,12 +43,33 @@ app.get('/service-worker.js', (req, res) => {
   return res.sendFile(path.join(__dirname, 'service-worker.js'));
 });
 
+// Add route for API features
+app.get('/api/features', (req, res) => {
+  res.json({
+    features: [
+      'java-terminal',
+      'api-demo',
+      'db-viewer',
+      'git-viewer',
+      'build-tools',
+      'project-demo',
+      'ide-tools',
+      'code-challenge'
+    ]
+  });
+});
+
 // Serve static files with proper MIME types
 app.use(express.static(path.join(__dirname), {
   setHeaders: (res, filePath) => {
     const ext = path.extname(filePath).toLowerCase();
     if (MIME_TYPES[ext]) {
       res.setHeader('Content-Type', MIME_TYPES[ext]);
+    }
+
+    // Ensure proper MIME types for module js files
+    if (ext === '.js' && filePath.includes('/features/')) {
+      res.setHeader('Content-Type', 'application/javascript');
     }
 
     // Set caching headers for static assets
