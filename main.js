@@ -950,7 +950,7 @@ document.addEventListener('DOMContentLoaded', function() {
         applySyntaxHighlighting();
 
         // Hide loading overlay if it exists
-        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingOverlay = document.getElementById('loadingOverlay').style.display = 'none';
         if (loadingOverlay) {
             setTimeout(() => {
                 loadingOverlay.style.opacity = '0';

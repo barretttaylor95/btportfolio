@@ -159,4 +159,66 @@ This project is licensed under the MIT License.
 
 ## Author
 
-Barrett Taylor - [GitHub](https://github.com/barretttaylor95) | [LinkedIn](https://www.linkedin.com/in/barrett-taylor-422237182/)
+Barrett Taylor - [GitHub](https://github.com/barretttaylor95) | [LinkedIn](https://www.linkedin.com/in/barrett-taylor-422237182/)Overview
+Barrett Taylor's portfolio website features an IDE-style interface with interactive elements, showcasing skills, projects, and professional experience as a fullstack web developer.
+Recent Updates
+The following updates have been made to fix layout and functionality issues:
+
+Fixed loading overlay that was preventing the site from displaying
+Added missing terminal panel and functionality
+Corrected layout issues with the editor area
+Added status bar at the bottom of the interface
+Implemented basic terminal command processing
+Fixed tab navigation in the editor area
+Made project directory files clickable
+
+Getting Started
+Prerequisites
+
+Node.js (v14 or later) for running the Express server
+
+Installation
+
+Clone the repository:
+bashCopygit clone https://github.com/barretttaylor95/portfolio.git
+cd portfolio
+
+Install dependencies:
+bashCopynpm install
+
+Start the server:
+bashCopynpm start
+
+Visit the website in your browser:
+Copyhttp://localhost:3000
+
+
+Project Structure
+The core files that have been updated include:
+
+index.html - Main HTML structure
+main.js - Core JavaScript functionality
+styles.css - CSS styling rules
+Advanced feature modules in the features/ directory
+
+Terminal Commands
+The website features an interactive terminal that supports the following commands:
+
+help - Show available commands
+about - View profile information
+skills - View technical skills
+projects - Browse portfolio projects
+experience - See work history
+hobbies - Learn about interests
+contact - View contact information
+clear - Clear the terminal
+
+Browser Support
+
+Chrome (latest)
+Firefox (latest)
+Safari (latest)
+Edge (latest)
+
+Author
+Barrett Taylor - GitHub | LinkedIn
