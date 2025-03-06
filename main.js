@@ -24,7 +24,6 @@ try {
     console.warn("Error loading modules:", e);
 }
 
-// Rest of the existing main.js code stays the same
 // Global variables for panel sizes
 let directoryWidth = 250;
 let terminalHeight = 200;
@@ -68,6 +67,68 @@ document.fonts.ready.then(function() {
     document.body.style.fontFamily = "'JetBrains Mono', Consolas, 'Courier New', monospace";
 });
 
+// Create the terminal panel if it doesn't exist
+function createTerminalPanel() {
+    const contentArea = document.querySelector('.content-area');
+    if (!contentArea) return;
+
+    // Check if terminal panel already exists
+    if (document.getElementById('terminalPanel')) return;
+
+    // Create the terminal panel
+    const terminalPanel = document.createElement('div');
+    terminalPanel.className = 'terminal-panel';
+    terminalPanel.id = 'terminalPanel';
+
+    // Create resize handle for terminal
+    const terminalResizeHandle = document.createElement('div');
+    terminalResizeHandle.className = 'resize-handle vertical-resize-handle';
+    terminalResizeHandle.id = 'terminalResizeHandle';
+    terminalPanel.appendChild(terminalResizeHandle);
+
+    // Create terminal header
+    const terminalHeader = document.createElement('div');
+    terminalHeader.className = 'terminal-header';
+    terminalHeader.innerHTML = '<div class="terminal-title">Terminal</div><div class="terminal-tabs"><div class="terminal-tab active">CLI</div></div>';
+    terminalPanel.appendChild(terminalHeader);
+
+    // Create terminal content
+    const terminalContent = document.createElement('div');
+    terminalContent.className = 'terminal-content';
+
+    // Add welcome message
+    const welcomeMsg = document.createElement('div');
+    welcomeMsg.className = 'terminal-output';
+    welcomeMsg.textContent = "Welcome to Barrett Taylor's Interactive CLI.";
+
+    const helpMsg = document.createElement('div');
+    helpMsg.className = 'terminal-output';
+    helpMsg.textContent = "Type help to see available commands.";
+
+    terminalContent.appendChild(welcomeMsg);
+    terminalContent.appendChild(helpMsg);
+
+    // Create prompt
+    const prompt = document.createElement('div');
+    prompt.className = 'terminal-prompt';
+    prompt.innerHTML = `
+        <span class="terminal-user">guest</span>
+        <span class="terminal-at">@</span>
+        <span class="terminal-machine">portfolio</span>
+        <span class="terminal-colon">:</span>
+        <span class="terminal-directory">~</span>
+        <span class="terminal-symbol">$</span>
+        <span class="terminal-input" contenteditable="true" spellcheck="false"></span>
+        <span class="typing-cursor"></span>
+    `;
+
+    terminalContent.appendChild(prompt);
+    terminalPanel.appendChild(terminalContent);
+
+    // Add terminal panel to content area
+    contentArea.appendChild(terminalPanel);
+}
+
 // Show the active section content and tab
 function showSection(section) {
     try {
@@ -110,7 +171,150 @@ function showSection(section) {
             }
         }
     } catch (error) {
-        console.error('Error showing section:', error);
+        console.error('Error navigating command history:', error);
+    }
+}
+
+// Setup terminal command handler for links in the editor
+function setupTerminalCommandHandler() {
+    // Make sure we don't define it twice
+    if (!window.terminalProcessCommand) {
+        window.terminalProcessCommand = function(command) {
+            const terminal = document.querySelector('.terminal-content');
+            if (!terminal) return;
+
+            // Find the input element
+            const inputElement = terminal.querySelector('.terminal-prompt:last-child .terminal-input');
+            if (!inputElement) return;
+
+            // Set the command text
+            inputElement.textContent = command;
+
+            // Create and dispatch an Enter key event
+            const event = new KeyboardEvent('keydown', {
+                key: 'Enter',
+                code: 'Enter',
+                keyCode: 13,
+                which: 13,
+                bubbles: true,
+                cancelable: true
+            });
+
+            inputElement.dispatchEvent(event);
+        };
+    }
+}
+
+// Apply syntax highlighting to code blocks
+function applySyntaxHighlighting() {
+    document.querySelectorAll('pre code').forEach(block => {
+        // Get the language class
+        const langMatch = block.className.match(/language-(\w+)/);
+        if (langMatch) {
+            const lang = langMatch[1];
+
+            // Simple syntax highlighting based on patterns
+            let html = block.innerHTML;
+
+            // Comments
+            html = html.replace(/\/\/.*$/gm, match => `<span class="comment">${match}</span>`);
+            html = html.replace(/\/\*[\s\S]*?\*\//g, match => `<span class="comment">${match}</span>`);
+            html = html.replace(/#.*$/gm, match => `<span class="comment">${match}</span>`);
+
+            // Strings
+            html = html.replace(/"([^"]*)"/g, (match, p1) => `"<span class="string">${p1}</span>"`);
+            html = html.replace(/'([^']*)'/g, (match, p1) => `'<span class="string">${p1}</span>'`);
+
+            // Keywords
+            const keywords = {
+                java: ['public', 'class', 'private', 'protected', 'final', 'static', 'void', 'import', 'package', 'return', 'new', 'this', 'if', 'else', 'for', 'while', 'try', 'catch'],
+                javascript: ['const', 'let', 'var', 'function', 'return', 'if', 'else', 'for', 'while', 'try', 'catch', 'await', 'async', 'import', 'export', 'default', 'from', 'class', 'this'],
+                python: ['def', 'import', 'from', 'class', 'if', 'else', 'elif', 'for', 'while', 'try', 'except', 'return', 'with', 'as', 'in', 'not', 'and', 'or', 'self']
+            };
+
+            if (keywords[lang]) {
+                keywords[lang].forEach(keyword => {
+                    const re = new RegExp(`\\b${keyword}\\b`, 'g');
+                    html = html.replace(re, `<span class="keyword">${keyword}</span>`);
+                });
+            }
+
+            block.innerHTML = html;
+        }
+    });
+}
+
+// Initialize on document load
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        // Initialize resizable panels
+        initResizablePanels();
+
+        // Check for theme preference
+        const storedTheme = safeLocalStorage('get', 'theme');
+        if (storedTheme) {
+            isDarkMode = storedTheme === 'dark';
+            if (!isDarkMode) {
+                document.body.classList.remove('dark-mode');
+                document.body.classList.add('light-mode');
+            }
+        }
+
+        // Set up theme toggle button if it exists
+        const themeToggleBtn = document.querySelector('.action-button');
+        if (themeToggleBtn) {
+            themeToggleBtn.addEventListener('click', toggleTheme);
+        }
+
+        // Expand the root folder by default
+        const rootFolder = document.querySelector('.tree-item');
+        if (rootFolder) {
+            toggleFolder(rootFolder);
+        }
+
+        // Check if there's a hash in the URL and show that section
+        const hash = window.location.hash;
+        if (hash && hash.length > 1) {
+            const section = hash.substring(1);
+            showSection(section);
+        } else {
+            // Otherwise, try to load from localStorage or default to 'about'
+            const savedTab = safeLocalStorage('get', 'activeTab');
+            showSection(savedTab || 'about');
+        }
+
+        // Setup terminal command handler for editor links
+        setupTerminalCommandHandler();
+
+        // Set up interactive terminal
+        setupInteractiveTerminal();
+
+        // Setup tab close buttons
+        document.querySelectorAll('.close-tab').forEach(closeBtn => {
+            closeBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const tab = this.closest('.editor-tab');
+                if (tab) {
+                    tab.style.display = 'none';
+                    if (tab.classList.contains('active')) {
+                        showSection('about');
+                    }
+                }
+            });
+        });
+
+        // Apply syntax highlighting
+        applySyntaxHighlighting();
+
+        // Hide loading overlay if it exists
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error initializing application:', error);
+    }
+});.error('Error showing section:', error);
         // Default to a visible state if error occurs
         document.querySelectorAll('.code-content')[0]?.classList.add('active');
     }
@@ -226,8 +430,11 @@ function toggleTheme() {
     }
 }
 
-// Initialize the resizable panels - FIXED function
+// Initialize the resizable panels
 function initResizablePanels() {
+    // Create terminal panel if it doesn't exist
+    createTerminalPanel();
+
     const directoryHandle = document.getElementById('directoryResizeHandle');
     const terminalHandle = document.getElementById('terminalResizeHandle');
     const projectDirectory = document.getElementById('projectDirectory');
@@ -316,7 +523,7 @@ function initResizablePanels() {
     });
 }
 
-// Update panel sizes based on current values - FIXED function
+// Update panel sizes based on current values
 function updatePanelSizes() {
     const projectDirectory = document.getElementById('projectDirectory');
     const editorArea = document.getElementById('editorArea');
@@ -814,152 +1021,4 @@ function navigateCommandHistory(direction, inputElement) {
             }
         }
     } catch (error) {
-        console.error('Error navigating command history:', error);
-    }
-}
-
-// Apply syntax highlighting to code blocks
-function applySyntaxHighlighting() {
-    document.querySelectorAll('pre code').forEach(block => {
-        // Get the language class
-        const langMatch = block.className.match(/language-(\w+)/);
-        if (langMatch) {
-            const lang = langMatch[1];
-
-            // Simple syntax highlighting based on patterns
-            let html = block.innerHTML;
-
-            // Comments
-            html = html.replace(/\/\/.*$/gm, match => `<span class="comment">${match}</span>`);
-            html = html.replace(/\/\*[\s\S]*?\*\//g, match => `<span class="comment">${match}</span>`);
-            html = html.replace(/#.*$/gm, match => `<span class="comment">${match}</span>`);
-
-            // Strings
-            html = html.replace(/"([^"]*)"/g, (match, p1) => `"<span class="string">${p1}</span>"`);
-            html = html.replace(/'([^']*)'/g, (match, p1) => `'<span class="string">${p1}</span>'`);
-
-            // Keywords
-            const keywords = {
-                java: ['public', 'class', 'private', 'protected', 'final', 'static', 'void', 'import', 'package', 'return', 'new', 'this', 'if', 'else', 'for', 'while', 'try', 'catch'],
-                javascript: ['const', 'let', 'var', 'function', 'return', 'if', 'else', 'for', 'while', 'try', 'catch', 'await', 'async', 'import', 'export', 'default', 'from', 'class', 'this'],
-                python: ['def', 'import', 'from', 'class', 'if', 'else', 'elif', 'for', 'while', 'try', 'except', 'return', 'with', 'as', 'in', 'not', 'and', 'or', 'self']
-            };
-
-            if (keywords[lang]) {
-                keywords[lang].forEach(keyword => {
-                    const re = new RegExp(`\\b${keyword}\\b`, 'g');
-                    html = html.replace(re, `<span class="keyword">${keyword}</span>`);
-                });
-            }
-
-            block.innerHTML = html;
-        }
-    });
-}
-
-// Setup terminal command handler for links in the editor
-function setupTerminalCommandHandler() {
-    // Make sure we don't define it twice
-    if (!window.terminalProcessCommand) {
-        window.terminalProcessCommand = function(command) {
-            const terminal = document.querySelector('.terminal-content');
-            if (!terminal) return;
-
-            // Find the input element
-            const inputElement = terminal.querySelector('.terminal-prompt:last-child .terminal-input');
-            if (!inputElement) return;
-
-            // Set the command text
-            inputElement.textContent = command;
-
-            // Create and dispatch an Enter key event
-            const event = new KeyboardEvent('keydown', {
-                key: 'Enter',
-                code: 'Enter',
-                keyCode: 13,
-                which: 13,
-                bubbles: true,
-                cancelable: true
-            });
-
-            inputElement.dispatchEvent(event);
-        };
-    }
-}
-
-// Initialize on document load
-document.addEventListener('DOMContentLoaded', function() {
-    try {
-        // Initialize resizable panels
-        initResizablePanels();
-
-        // Check for theme preference
-        const storedTheme = safeLocalStorage('get', 'theme');
-        if (storedTheme) {
-            isDarkMode = storedTheme === 'dark';
-            if (!isDarkMode) {
-                document.body.classList.remove('dark-mode');
-                document.body.classList.add('light-mode');
-            }
-        }
-
-        // Set up theme toggle button if it exists
-        const themeToggleBtn = document.querySelector('.action-button');
-        if (themeToggleBtn) {
-            themeToggleBtn.addEventListener('click', toggleTheme);
-        }
-
-        // Expand the root folder by default
-        const rootFolder = document.querySelector('.tree-item');
-        if (rootFolder) {
-            toggleFolder(rootFolder);
-        }
-
-        // Check if there's a hash in the URL and show that section
-        const hash = window.location.hash;
-        if (hash && hash.length > 1) {
-            const section = hash.substring(1);
-            showSection(section);
-        } else {
-            // Otherwise, try to load from localStorage or default to 'about'
-            const savedTab = safeLocalStorage('get', 'activeTab');
-            showSection(savedTab || 'about');
-        }
-
-        // Setup terminal command handler for editor links
-        setupTerminalCommandHandler();
-
-        // Set up interactive terminal
-        setupInteractiveTerminal();
-
-        // Setup tab close buttons
-        document.querySelectorAll('.close-tab').forEach(closeBtn => {
-            closeBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const tab = this.closest('.editor-tab');
-                if (tab) {
-                    tab.style.display = 'none';
-                    if (tab.classList.contains('active')) {
-                        showSection('about');
-                    }
-                }
-            });
-        });
-
-        // Apply syntax highlighting
-        applySyntaxHighlighting();
-
-        // Hide loading overlay if it exists
-        const loadingOverlay = document.getElementById('loadingOverlay').style.display = 'none';
-        if (loadingOverlay) {
-            setTimeout(() => {
-                loadingOverlay.style.opacity = '0';
-                setTimeout(() => {
-                    loadingOverlay.style.display = 'none';
-                }, 500);
-            }, 500);
-        }
-    } catch (error) {
-        console.error('Error initializing application:', error);
-    }
-});
+        console
