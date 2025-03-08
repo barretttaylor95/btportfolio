@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3000;
 // Use compression middleware
 app.use(compression());
 
-// MIME type mapping - updated with more specific JavaScript MIME types
+// MIME type mapping - explicitly setting the JavaScript MIME type for modules
 const MIME_TYPES = {
   '.html': 'text/html',
   '.css': 'text/css',
@@ -44,17 +44,23 @@ app.get('/service-worker.js', (req, res) => {
   return res.sendFile(path.join(__dirname, 'service-worker.js'));
 });
 
-// Add specific routes for feature JavaScript files to ensure they load as modules
+// Add specific routes for feature JavaScript files to ensure they load properly as modules
+// This is critical for the ES module system to work
 app.get('/features/*.js', (req, res) => {
   const filePath = path.join(__dirname, req.path);
+
+  // Set JavaScript MIME type for all feature files
   res.setHeader('Content-Type', 'application/javascript');
+
+  // Log requests to help with debugging
+  console.log(`Feature module requested: ${req.path}`);
 
   // Check if file exists
   if (fs.existsSync(filePath)) {
     return res.sendFile(filePath);
   } else {
     console.error(`File not found: ${filePath}`);
-    return res.status(404).send('File not found');
+    return res.status(404).send('Feature module file not found');
   }
 });
 
@@ -74,6 +80,43 @@ app.get('/api/features', (req, res) => {
   });
 });
 
+// Add route to check module loading capability
+app.get('/api/check-module', (req, res) => {
+  const moduleName = req.query.name;
+  const modulePath = path.join(__dirname, 'features', `${moduleName}.js`);
+
+  // Check if the file exists
+  if (fs.existsSync(modulePath)) {
+    try {
+      const stats = fs.statSync(modulePath);
+      const moduleInfo = {
+        exists: true,
+        size: stats.size,
+        lastModified: stats.mtime,
+        path: `/features/${moduleName}.js`
+      };
+      res.json(moduleInfo);
+    } catch (error) {
+      res.status(500).json({
+        exists: true,
+        error: 'Error retrieving module stats',
+        message: error.message
+      });
+    }
+  } else {
+    res.status(404).json({ exists: false, message: 'Module not found' });
+  }
+});
+
+// Set up middleware for handling JavaScript files with correct MIME types
+// This is crucial for the correct loading of ES modules
+app.use((req, res, next) => {
+  if (req.path.endsWith('.js')) {
+    res.set('Content-Type', 'application/javascript');
+  }
+  next();
+});
+
 // Serve static files with proper MIME types
 app.use(express.static(path.join(__dirname), {
   setHeaders: (res, filePath) => {
@@ -83,15 +126,16 @@ app.use(express.static(path.join(__dirname), {
       res.setHeader('Content-Type', MIME_TYPES[ext]);
     }
 
-    // Special handling for JavaScript files and modules
+    // Double-check JavaScript files have the proper MIME type
     if (ext === '.js') {
-      // Ensure all JavaScript files have the proper MIME type
       res.setHeader('Content-Type', 'application/javascript');
     }
 
-    // Special handling for module files in the features directory
+    // Special handling for feature module files
     if (filePath.includes('/features/') && ext === '.js') {
       res.setHeader('Content-Type', 'application/javascript');
+      // Log headers for debugging
+      console.log(`Setting headers for feature file: ${filePath.split('/').pop()}`);
     }
 
     // Set caching headers for static assets
@@ -100,7 +144,7 @@ app.use(express.static(path.join(__dirname), {
       res.setHeader('Cache-Control', 'public, max-age=86400');
     } else {
       // For HTML and other critical files
-      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.setHeader('Cache-Control', 'no-cache, must-revalidate');
     }
   }
 }));

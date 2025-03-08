@@ -5,79 +5,13 @@
  * for visitors to test their programming skills.
  */
 
-// Function to load a script via a traditional script tag
-function loadScript(url, callback) {
-    console.log(`Loading script: ${url}`);
-    const script = document.createElement('script');
-    script.type = 'text/javascript'; // Regular script, not a module
-    script.src = url;
-    script.onload = function() {
-        console.log(`Successfully loaded: ${url}`);
-        callback(null);
-    };
-    script.onerror = function() {
-        console.error(`Failed to load: ${url}`);
-        callback(new Error(`Failed to load script: ${url}`));
-    };
-    document.head.appendChild(script);
-}
+console.log("Code challenge module loaded");
 
 // Track if coding challenge mode is active
 let challengeActive = false;
 
 // Currently selected challenge
 let currentChallenge = null;
-
-// Add to global window object for non-module access
-window.codeChallengePlaceholder = {
-    start: function(terminal, editorArea) {
-        try {
-            console.log("Starting coding challenge mode");
-            setupTerminalCommandHandler();
-            initCodingChallenge(terminal, editorArea);
-        } catch (error) {
-            console.error("Error starting coding challenge:", error);
-            const errorOutput = document.createElement('div');
-            errorOutput.className = 'terminal-output';
-            errorOutput.innerHTML = `<span style="color: #cc0000;">Error initializing coding challenge: ${error.message}</span>`;
-
-            if (terminal) {
-                const lastPrompt = terminal.querySelector('.terminal-prompt:last-child');
-                if (lastPrompt) {
-                    terminal.insertBefore(errorOutput, lastPrompt);
-                } else {
-                    terminal.appendChild(errorOutput);
-                }
-            }
-        }
-    },
-    processInput: function(command, terminal, editorArea) {
-        try {
-            console.log("Processing coding challenge command:", command);
-            return processChallengeCommand(command, terminal, editorArea);
-        } catch (error) {
-            console.error("Error processing command:", error);
-
-            const errorOutput = document.createElement('div');
-            errorOutput.className = 'terminal-output';
-            errorOutput.innerHTML = `<span style="color: #cc0000;">Error processing command: ${error.message}</span>`;
-
-            if (terminal) {
-                const lastPrompt = terminal.querySelector('.terminal-prompt:last-child');
-                if (lastPrompt) {
-                    terminal.insertBefore(errorOutput, lastPrompt);
-                } else {
-                    terminal.appendChild(errorOutput);
-                }
-            }
-
-            return true; // Stay in challenge mode despite the error
-        }
-    },
-    isActive: function() {
-        return challengeActive;
-    }
-};
 
 // Simplified coding challenges data (just a couple for demonstration)
 const codingChallenges = [
@@ -198,6 +132,7 @@ function initCodingChallenge(terminal, editorArea) {
         return;
     }
 
+    console.log("Initializing coding challenge");
     challengeActive = true;
     currentChallenge = null;
 
@@ -337,6 +272,8 @@ function createChallengeTab(editorArea) {
  * Activate the coding challenge tab
  */
 function activateChallengeTab() {
+    console.log("Activating challenge tab");
+
     // Deactivate all tabs
     document.querySelectorAll('.editor-tab').forEach(tab => {
         tab.classList.remove('active');
@@ -366,6 +303,8 @@ function activateChallengeTab() {
  * @returns {boolean} - Whether to continue in challenge mode
  */
 function processChallengeCommand(command, terminal, editorArea) {
+    console.log("Processing challenge command:", command);
+
     if (!terminal || !editorArea) {
         console.error("Required elements not found for processing challenge command");
         return false;
@@ -461,6 +400,8 @@ function processChallengeCommand(command, terminal, editorArea) {
  * @param {HTMLElement} editorArea - Editor area DOM element
  */
 function showChallengeList(terminal, editorArea) {
+    console.log("Showing challenge list");
+
     // Create output element
     const output = document.createElement('div');
     output.className = 'terminal-output';
@@ -497,158 +438,6 @@ function showChallengeList(terminal, editorArea) {
 
     // Set output HTML
     output.innerHTML = challengesHtml;
-
-    // Add output to terminal
-    const lastPrompt = terminal.querySelector('.terminal-prompt:last-child');
-    if (lastPrompt) {
-        terminal.insertBefore(output, lastPrompt);
-    } else {
-        terminal.appendChild(output);
-    }
-
-    // Update challenge tab content
-    updateChallengeContent(`
-        <h1>Coding Challenges</h1>
-        <p>Select a challenge from the list below to begin coding:</p>
-
-        <div style="display: flex; flex-wrap: wrap; gap: 20px; margin: 20px 0;">
-            ${codingChallenges.map(challenge => `
-                <div class="challenge-card" style="background-color: #2b2b2b; border-radius: 5px; padding: 15px; margin-bottom: 15px; flex: 1; min-width: 300px;">
-                    <h2>${challenge.name}</h2>
-                    <p>
-                        <span style="background-color: ${getDifficultyColor(challenge.difficulty)}; color: white; font-size: 0.8em; padding: 2px 6px; border-radius: 3px;">
-                            ${challenge.difficulty}
-                        </span>
-                    </p>
-                    <p>${challenge.description.substring(0, 100)}${challenge.description.length > 100 ? '...' : ''}</p>
-                    <div style="margin-top: 15px;">
-                        <a href="#" onclick="window.terminalProcessCommand('select ${challenge.id}'); return false;" style="padding: 8px 16px; background-color: #214283; color: white; text-decoration: none; border-radius: 4px; display: inline-block;">
-                            Start Challenge
-                        </a>
-                    </div>
-                </div>
-            `).join('')}
-        </div>
-    `);
-
-    // Scroll terminal to bottom
-    terminal.scrollTop = terminal.scrollHeight;
-}
-
-/**
- * Select a challenge to solve
- * @param {string} challengeId - ID of the challenge to select
- * @param {HTMLElement} terminal - Terminal DOM element
- * @param {HTMLElement} editorArea - Editor area DOM element
- */
-function selectChallenge(challengeId, terminal, editorArea) {
-    // Find challenge by ID
-    const challenge = codingChallenges.find(c => c.id.toLowerCase() === challengeId.toLowerCase());
-
-    // Create output element
-    const output = document.createElement('div');
-    output.className = 'terminal-output';
-
-    if (!challenge) {
-        // Challenge not found
-        output.innerHTML = `<span style="color: #cc0000;">Challenge '${challengeId}' not found. Type 'list' to see available challenges.</span>`;
-    } else {
-        // Set current challenge
-        currentChallenge = challenge;
-
-        // Build challenge selection HTML
-        let selectionHtml = `
-            <div style="color: #6a8759; font-weight: bold; margin-bottom: 10px;">${challenge.name} (${challenge.difficulty})</div>
-            <div style="margin-bottom: 10px;">${challenge.description}</div>
-
-            <div style="margin-top: 10px;"><strong>Examples:</strong></div>
-            ${challenge.examples.map(example => `
-                <div style="margin: 5px 0;">Input: ${example.input}</div>
-                <div style="margin: 5px 0;">Output: ${example.output}</div>
-            `).join('')}
-
-            <div style="margin-top: 10px;">Challenge ready in the editor panel. Type <code>hint</code> for help or <code>test</code> to test your solution.</div>
-        `;
-
-        // Set output HTML
-        output.innerHTML = selectionHtml;
-
-        // Update challenge tab with code editor
-        updateChallengeContent(`
-            <h1>${challenge.name}</h1>
-            <p>
-                <span style="background-color: ${getDifficultyColor(challenge.difficulty)}; color: white; font-size: 0.8em; padding: 2px 6px; border-radius: 3px;">
-                    ${challenge.difficulty}
-                </span>
-            </p>
-            <p>${challenge.description}</p>
-
-            <h2>Examples</h2>
-            <div style="background-color: #2b2b2b; border-radius: 10px; padding: 15px; margin: 20px 0;">
-                ${challenge.examples.map(example => `
-                    <div style="margin-bottom: 15px;">
-                        <div><strong>Input:</strong> ${example.input}</div>
-                        <div><strong>Output:</strong> ${example.output}</div>
-                    </div>
-                `).join('')}
-            </div>
-
-            <h2>Solution</h2>
-            <pre style="background-color: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; margin: 20px 0; font-family: 'JetBrains Mono', monospace; white-space: pre-wrap;">${challenge.template}</pre>
-
-            <div style="margin: 30px 0; display: flex; gap: 10px; justify-content: center;">
-                <a href="#" onclick="window.terminalProcessCommand('hint'); return false;" style="padding: 8px 16px; background-color: #9876aa; color: white; text-decoration: none; border-radius: 4px; margin-right: 10px;">
-                    <i class="fas fa-lightbulb"></i> Get Hint
-                </a>
-                <a href="#" onclick="window.terminalProcessCommand('test'); return false;" style="padding: 8px 16px; background-color: #6a8759; color: white; text-decoration: none; border-radius: 4px; margin-right: 10px;">
-                    <i class="fas fa-play"></i> Test Solution
-                </a>
-                <a href="#" onclick="window.terminalProcessCommand('solution'); return false;" style="padding: 8px 16px; background-color: #cc7832; color: white; text-decoration: none; border-radius: 4px;">
-                    <i class="fas fa-eye"></i> View Solution
-                </a>
-            </div>
-        `);
-    }
-
-    // Add output to terminal
-    const lastPrompt = terminal.querySelector('.terminal-prompt:last-child');
-    if (lastPrompt) {
-        terminal.insertBefore(output, lastPrompt);
-    } else {
-        terminal.appendChild(output);
-    }
-
-    // Scroll terminal to bottom
-    terminal.scrollTop = terminal.scrollHeight;
-}
-
-/**
- * Show a hint for the current challenge
- * @param {HTMLElement} terminal - Terminal DOM element
- * @param {HTMLElement} editorArea - Editor area DOM element
- */
-function showHint(terminal, editorArea) {
-    // Create output element
-    const output = document.createElement('div');
-    output.className = 'terminal-output';
-
-    if (!currentChallenge) {
-        // No current challenge
-        output.innerHTML = `<span style="color: #cc0000;">No challenge selected. Type 'list' to see available challenges and 'select {challengeId}' to choose one.</span>`;
-    } else {
-        // Generate a random hint index
-        const hintIndex = Math.floor(Math.random() * currentChallenge.hints.length);
-
-        // Build hint HTML
-        const hintHtml = `
-            <div style="color: #9876aa; font-weight: bold; margin-bottom: 10px;">Hint for ${currentChallenge.name}:</div>
-            <div style="margin-left: 10px;">${currentChallenge.hints[hintIndex]}</div>
-            <div style="margin-top: 10px; color: #808080;">Type <code>hint</code> again for another hint or <code>test</code> to test your solution.</div>
-        `;
-
-        // Set output HTML
-        output.innerHTML = hintHtml;
-    }
 
     // Add output to terminal
     const lastPrompt = terminal.querySelector('.terminal-prompt:last-child');
@@ -789,5 +578,365 @@ function testSolution(terminal, editorArea) {
 
     // Scroll terminal to bottom
     terminal.scrollTop = terminal.scrollHeight;
-};">Input:</span> ${input},
-                    <span style="color: #9876aa
+}
+
+/**
+ * Reset the current challenge
+ * @param {HTMLElement} terminal - Terminal DOM element
+ * @param {HTMLElement} editorArea - Editor area DOM element
+ */
+function resetChallenge(terminal, editorArea) {
+    // Create output element
+    const output = document.createElement('div');
+    output.className = 'terminal-output';
+
+    if (!currentChallenge) {
+        // No current challenge
+        output.innerHTML = `<span style="color: #cc0000;">No challenge selected. Type 'list' to see available challenges and 'select {challengeId}' to choose one.</span>`;
+    } else {
+        // Reset challenge
+        const challenge = currentChallenge;
+
+        // Build reset HTML
+        const resetHtml = `
+            <div style="color: #6a8759; font-weight: bold; margin-bottom: 10px;">Reset Challenge: ${challenge.name}</div>
+            <div style="margin-bottom: 10px;">Challenge has been reset to the initial template.</div>
+            <div style="margin-top: 10px;">The editor has been updated with the original code template.</div>
+        `;
+
+        // Set output HTML
+        output.innerHTML = resetHtml;
+
+        // Update challenge content with original template
+        updateChallengeContent(`
+            <h1>${challenge.name} - Reset</h1>
+            <p>
+                <span style="background-color: ${getDifficultyColor(challenge.difficulty)}; color: white; font-size: 0.8em; padding: 2px 6px; border-radius: 3px;">
+                    ${challenge.difficulty}
+                </span>
+            </p>
+            <p>${challenge.description}</p>
+
+            <h2>Examples</h2>
+            <div style="background-color: #2b2b2b; border-radius: 10px; padding: 15px; margin: 20px 0;">
+                ${challenge.examples.map(example => `
+                    <div style="margin-bottom: 15px;">
+                        <div><strong>Input:</strong> ${example.input}</div>
+                        <div><strong>Output:</strong> ${example.output}</div>
+                    </div>
+                `).join('')}
+            </div>
+
+            <h2>Solution</h2>
+            <pre style="background-color: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; margin: 20px 0; font-family: 'JetBrains Mono', monospace; white-space: pre-wrap;">${challenge.template}</pre>
+
+            <div style="margin: 30px 0; display: flex; gap: 10px; justify-content: center;">
+                <a href="#" onclick="window.terminalProcessCommand('hint'); return false;" style="padding: 8px 16px; background-color: #9876aa; color: white; text-decoration: none; border-radius: 4px; margin-right: 10px;">
+                    <i class="fas fa-lightbulb"></i> Get Hint
+                </a>
+                <a href="#" onclick="window.terminalProcessCommand('test'); return false;" style="padding: 8px 16px; background-color: #6a8759; color: white; text-decoration: none; border-radius: 4px; margin-right: 10px;">
+                    <i class="fas fa-play"></i> Test Solution
+                </a>
+            </div>
+        `);
+    }
+
+    // Add output to terminal
+    const lastPrompt = terminal.querySelector('.terminal-prompt:last-child');
+    if (lastPrompt) {
+        terminal.insertBefore(output, lastPrompt);
+    } else {
+        terminal.appendChild(output);
+    }
+
+    // Scroll terminal to bottom
+    terminal.scrollTop = terminal.scrollHeight;
+}
+
+/**
+ * Update the challenge content in the editor
+ * @param {string} html - HTML content to update
+ */
+function updateChallengeContent(html) {
+    const challengeDetails = document.getElementById('challengeDetails');
+    if (challengeDetails) {
+        challengeDetails.innerHTML = html;
+    }
+}
+
+/**
+ * Get color for difficulty level
+ * @param {string} difficulty - Difficulty level
+ * @returns {string} - Color hex code
+ */
+function getDifficultyColor(difficulty) {
+    switch (difficulty.toLowerCase()) {
+        case 'easy':
+            return '#6a8759'; // Green
+        case 'medium':
+            return '#cc7832'; // Orange
+        case 'hard':
+            return '#cc0000'; // Red
+        default:
+            return '#214283'; // Blue
+    }
+}
+
+// Create the module object
+const codeChallenge = {
+    start: function(terminal, editorArea) {
+        console.log("Code challenge start function called");
+        initCodingChallenge(terminal, editorArea);
+    },
+    processInput: function(command, terminal, editorArea) {
+        return processChallengeCommand(command, terminal, editorArea);
+    },
+    isActive: function() {
+        return challengeActive;
+    }
+};
+
+// Make available globally for backward compatibility
+window.codeChallenge = codeChallenge;
+
+// Export for ES module support
+export default codeChallenge;-prompt:last-child');
+    if (lastPrompt) {
+        terminal.insertBefore(output, lastPrompt);
+    } else {
+        terminal.appendChild(output);
+    }
+
+    // Update challenge tab content
+    updateChallengeContent(`
+        <h1>Coding Challenges</h1>
+        <p>Select a challenge from the list below to begin coding:</p>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 20px; margin: 20px 0;">
+            ${codingChallenges.map(challenge => `
+                <div class="challenge-card" style="background-color: #2b2b2b; border-radius: 5px; padding: 15px; margin-bottom: 15px; flex: 1; min-width: 300px;">
+                    <h2>${challenge.name}</h2>
+                    <p>
+                        <span style="background-color: ${getDifficultyColor(challenge.difficulty)}; color: white; font-size: 0.8em; padding: 2px 6px; border-radius: 3px;">
+                            ${challenge.difficulty}
+                        </span>
+                    </p>
+                    <p>${challenge.description.substring(0, 100)}${challenge.description.length > 100 ? '...' : ''}</p>
+                    <div style="margin-top: 15px;">
+                        <a href="#" onclick="window.terminalProcessCommand('select ${challenge.id}'); return false;" style="padding: 8px 16px; background-color: #214283; color: white; text-decoration: none; border-radius: 4px; display: inline-block;">
+                            Start Challenge
+                        </a>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `);
+
+    // Scroll terminal to bottom
+    terminal.scrollTop = terminal.scrollHeight;
+}
+
+/**
+ * Select a challenge to solve
+ * @param {string} challengeId - ID of the challenge to select
+ * @param {HTMLElement} terminal - Terminal DOM element
+ * @param {HTMLElement} editorArea - Editor area DOM element
+ */
+function selectChallenge(challengeId, terminal, editorArea) {
+    console.log("Selecting challenge:", challengeId);
+
+    // Find challenge by ID
+    const challenge = codingChallenges.find(c => c.id.toLowerCase() === challengeId.toLowerCase());
+
+    // Create output element
+    const output = document.createElement('div');
+    output.className = 'terminal-output';
+
+    if (!challenge) {
+        // Challenge not found
+        output.innerHTML = `<span style="color: #cc0000;">Challenge '${challengeId}' not found. Type 'list' to see available challenges.</span>`;
+    } else {
+        // Set current challenge
+        currentChallenge = challenge;
+
+        // Build challenge selection HTML
+        let selectionHtml = `
+            <div style="color: #6a8759; font-weight: bold; margin-bottom: 10px;">${challenge.name} (${challenge.difficulty})</div>
+            <div style="margin-bottom: 10px;">${challenge.description}</div>
+
+            <div style="margin-top: 10px;"><strong>Examples:</strong></div>
+            ${challenge.examples.map(example => `
+                <div style="margin: 5px 0;">Input: ${example.input}</div>
+                <div style="margin: 5px 0;">Output: ${example.output}</div>
+            `).join('')}
+
+            <div style="margin-top: 10px;">Challenge ready in the editor panel. Type <code>hint</code> for help or <code>test</code> to test your solution.</div>
+        `;
+
+        // Set output HTML
+        output.innerHTML = selectionHtml;
+
+        // Update challenge tab with code editor
+        updateChallengeContent(`
+            <h1>${challenge.name}</h1>
+            <p>
+                <span style="background-color: ${getDifficultyColor(challenge.difficulty)}; color: white; font-size: 0.8em; padding: 2px 6px; border-radius: 3px;">
+                    ${challenge.difficulty}
+                </span>
+            </p>
+            <p>${challenge.description}</p>
+
+            <h2>Examples</h2>
+            <div style="background-color: #2b2b2b; border-radius: 10px; padding: 15px; margin: 20px 0;">
+                ${challenge.examples.map(example => `
+                    <div style="margin-bottom: 15px;">
+                        <div><strong>Input:</strong> ${example.input}</div>
+                        <div><strong>Output:</strong> ${example.output}</div>
+                    </div>
+                `).join('')}
+            </div>
+
+            <h2>Solution</h2>
+            <pre style="background-color: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; margin: 20px 0; font-family: 'JetBrains Mono', monospace; white-space: pre-wrap;">${challenge.template}</pre>
+
+            <div style="margin: 30px 0; display: flex; gap: 10px; justify-content: center;">
+                <a href="#" onclick="window.terminalProcessCommand('hint'); return false;" style="padding: 8px 16px; background-color: #9876aa; color: white; text-decoration: none; border-radius: 4px; margin-right: 10px;">
+                    <i class="fas fa-lightbulb"></i> Get Hint
+                </a>
+                <a href="#" onclick="window.terminalProcessCommand('test'); return false;" style="padding: 8px 16px; background-color: #6a8759; color: white; text-decoration: none; border-radius: 4px; margin-right: 10px;">
+                    <i class="fas fa-play"></i> Test Solution
+                </a>
+                <a href="#" onclick="window.terminalProcessCommand('solution'); return false;" style="padding: 8px 16px; background-color: #cc7832; color: white; text-decoration: none; border-radius: 4px;">
+                    <i class="fas fa-eye"></i> View Solution
+                </a>
+            </div>
+        `);
+    }
+
+    // Add output to terminal
+    const lastPrompt = terminal.querySelector('.terminal-prompt:last-child');
+    if (lastPrompt) {
+        terminal.insertBefore(output, lastPrompt);
+    } else {
+        terminal.appendChild(output);
+    }
+
+    // Scroll terminal to bottom
+    terminal.scrollTop = terminal.scrollHeight;
+}
+
+/**
+ * Show a hint for the current challenge
+ * @param {HTMLElement} terminal - Terminal DOM element
+ * @param {HTMLElement} editorArea - Editor area DOM element
+ */
+function showHint(terminal, editorArea) {
+    // Create output element
+    const output = document.createElement('div');
+    output.className = 'terminal-output';
+
+    if (!currentChallenge) {
+        // No current challenge
+        output.innerHTML = `<span style="color: #cc0000;">No challenge selected. Type 'list' to see available challenges and 'select {challengeId}' to choose one.</span>`;
+    } else {
+        // Generate a random hint index
+        const hintIndex = Math.floor(Math.random() * currentChallenge.hints.length);
+
+        // Build hint HTML
+        const hintHtml = `
+            <div style="color: #9876aa; font-weight: bold; margin-bottom: 10px;">Hint for ${currentChallenge.name}:</div>
+            <div style="margin-left: 10px;">${currentChallenge.hints[hintIndex]}</div>
+            <div style="margin-top: 10px; color: #808080;">Type <code>hint</code> again for another hint or <code>test</code> to test your solution.</div>
+        `;
+
+        // Set output HTML
+        output.innerHTML = hintHtml;
+    }
+
+    // Add output to terminal
+    const lastPrompt = terminal.querySelector('.terminal-prompt:last-child');
+    if (lastPrompt) {
+        terminal.insertBefore(output, lastPrompt);
+    } else {
+        terminal.appendChild(output);
+    }
+
+    // Scroll terminal to bottom
+    terminal.scrollTop = terminal.scrollHeight;
+}
+
+/**
+ * Show the solution for the current challenge
+ * @param {HTMLElement} terminal - Terminal DOM element
+ * @param {HTMLElement} editorArea - Editor area DOM element
+ */
+function showSolution(terminal, editorArea) {
+    // Create output element
+    const output = document.createElement('div');
+    output.className = 'terminal-output';
+
+    if (!currentChallenge) {
+        // No current challenge
+        output.innerHTML = `<span style="color: #cc0000;">No challenge selected. Type 'list' to see available challenges and 'select {challengeId}' to choose one.</span>`;
+    } else {
+        // Build solution HTML
+        const solutionHtml = `
+            <div style="color: #cc7832; font-weight: bold; margin-bottom: 10px;">Solution for ${currentChallenge.name}:</div>
+            <pre style="background-color: #1e1e1e; padding: 10px; border-radius: 5px; overflow-x: auto; margin: 10px 0; font-family: 'JetBrains Mono', monospace; white-space: pre-wrap;">${currentChallenge.solution}</pre>
+            <div style="margin-top: 10px; color: #808080;">The solution is now also available in the editor panel.</div>
+        `;
+
+        // Set output HTML
+        output.innerHTML = solutionHtml;
+
+        // Update challenge tab with solution
+        updateChallengeContent(`
+            <h1>${currentChallenge.name} - Solution</h1>
+            <p>
+                <span style="background-color: ${getDifficultyColor(currentChallenge.difficulty)}; color: white; font-size: 0.8em; padding: 2px 6px; border-radius: 3px;">
+                    ${currentChallenge.difficulty}
+                </span>
+            </p>
+            <p>${currentChallenge.description}</p>
+
+            <h2>Solution</h2>
+            <pre style="background-color: #1e1e1e; padding: 15px; border-radius: 5px; overflow-x: auto; margin: 20px 0; font-family: 'JetBrains Mono', monospace; white-space: pre-wrap;">${currentChallenge.solution}</pre>
+
+            <h2>Explanation</h2>
+            <div style="background-color: #2b2b2b; border-radius: 10px; padding: 15px; margin: 20px 0;">
+                <p>This solution works by:</p>
+                <ul>
+                    ${currentChallenge.id === 'fizzbuzz' ? `
+                        <li>Iterating through numbers from 1 to n</li>
+                        <li>Checking if each number is divisible by both 3 and 5 (giving "FizzBuzz")</li>
+                        <li>Checking if each number is divisible by 3 (giving "Fizz")</li>
+                        <li>Checking if each number is divisible by 5 (giving "Buzz")</li>
+                        <li>Using the original number if none of the above conditions are met</li>
+                        <li>Joining all results into a comma-separated string</li>
+                    ` : currentChallenge.id === 'palindrome' ? `
+                        <li>Removing all non-alphanumeric characters from the string</li>
+                        <li>Converting the resulting string to lowercase</li>
+                        <li>Comparing the cleaned string with its reverse</li>
+                        <li>If they match, the string is a palindrome</li>
+                    ` : `
+                        <li>Understanding the problem requirements</li>
+                        <li>Implementing an efficient algorithm</li>
+                        <li>Handling edge cases properly</li>
+                        <li>Using appropriate data structures</li>
+                    `}
+                </ul>
+            </div>
+
+            <div style="margin: 30px 0; display: flex; gap: 10px; justify-content: center;">
+                <a href="#" onclick="window.terminalProcessCommand('test'); return false;" style="padding: 8px 16px; background-color: #6a8759; color: white; text-decoration: none; border-radius: 4px; margin-right: 10px;">
+                    <i class="fas fa-play"></i> Test Solution
+                </a>
+                <a href="#" onclick="window.terminalProcessCommand('list'); return false;" style="padding: 8px 16px; background-color: #214283; color: white; text-decoration: none; border-radius: 4px;">
+                    <i class="fas fa-list"></i> Try Another Challenge
+                </a>
+            </div>
+        `);
+    }
+
+    // Add output to terminal
+    const lastPrompt = terminal.querySelector('.terminal

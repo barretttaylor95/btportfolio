@@ -29,6 +29,27 @@
     <!-- External Stylesheets -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="styles.css" rel="stylesheet">
+    <script type="text/javascript">
+        console.log("Testing code-challenge.js direct load");
+
+        // Attempt to load via script tag
+        function testLoadCodeChallenge() {
+          const script = document.createElement('script');
+          script.type = 'text/javascript';
+          script.src = './features/code-challenge.js';
+          script.onload = function() {
+            console.log("Successfully loaded code-challenge.js directly");
+            console.log("Window has codeChallenge global:", !!window.codeChallenge);
+          };
+          script.onerror = function(error) {
+            console.error("Failed to load code-challenge.js directly:", error);
+          };
+          document.head.appendChild(script);
+        }
+
+        // Run after page loads
+        window.addEventListener('DOMContentLoaded', testLoadCodeChallenge);
+    </script>
 </head>
 <body>
 <!-- Set display: none to ensure the loading overlay doesn't prevent site visibility -->
@@ -242,7 +263,8 @@ public class PetController {
         petService.deletePet(id);
         return ResponseEntity.noContent().build();
     }
-}</code></pre>
+}
+                        </code></pre>
 
                         <h3>JavaScript (React Component with Hooks)</h3>
                         <pre><code class="language-javascript">import React, { useState, useEffect } from 'react';
@@ -839,6 +861,59 @@ const primaryGuitars = [
             }
           }, 1000);
         });
+</script>
+<!-- Add this script tag just before the closing body tag in index.html -->
+<script>
+    // Debug script to ensure feature modules load properly
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM fully loaded - checking for feature modules');
+
+        // Load core features directly with script tags
+        function loadScript(url) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.type = 'text/javascript';
+                script.src = url;
+                script.async = true;
+
+                script.onload = () => {
+                    console.log(`Successfully loaded: ${url}`);
+                    resolve();
+                };
+
+                script.onerror = (e) => {
+                    console.error(`Error loading: ${url}`, e);
+                    reject(new Error(`Failed to load ${url}`));
+                };
+
+                document.head.appendChild(script);
+            });
+        }
+
+        // First check if main.js is working correctly
+        if (typeof createTerminalPanel !== 'function') {
+            console.warn('Main script functions not available - loading critical features manually');
+
+            // Load code challenge first because it's the most critical
+            loadScript('./features/code-challenge.js')
+                .then(() => {
+                    console.log('Code challenge module loaded successfully');
+                    return loadScript('./features/java-terminal.js');
+                })
+                .then(() => {
+                    console.log('Java terminal module loaded successfully');
+                    return loadScript('./features/api-demo.js');
+                })
+                .then(() => {
+                    console.log('All critical modules loaded successfully');
+                })
+                .catch(error => {
+                    console.error('Error during critical module loading:', error);
+                });
+        } else {
+            console.log('Main script working correctly - no need for manual feature loading');
+        }
+    });
 </script>
 </body>
 </html>

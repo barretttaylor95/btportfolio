@@ -1,5 +1,5 @@
 /**
- * Feature Loader
+ * Feature Loader - Fixed Version
  *
  * This script helps with loading feature modules and provides fallbacks
  * for when modules fail to load.
@@ -9,24 +9,57 @@
 const loadedFeatures = {};
 
 /**
- * Load a feature module dynamically
+ * Load a feature module dynamically using a traditional script tag
  * @param {string} name - Name of the feature to load
  * @param {string} path - Path to the feature module
  * @returns {Promise<Object>} - The loaded feature module
  */
 export async function loadFeature(name, path) {
-    try {
-        console.log(`Attempting to load feature: ${name} from ${path}`);
-        const module = await import(path);
-        console.log(`Successfully loaded feature: ${name}`);
-        loadedFeatures[name] = module.default;
-        return module.default;
-    } catch (error) {
-        console.error(`Error loading feature ${name}:`, error);
-        const fallbackModule = createFallbackModule(name);
-        loadedFeatures[name] = fallbackModule;
-        return fallbackModule;
-    }
+    return new Promise((resolve, reject) => {
+        try {
+            console.log(`Attempting to load feature: ${name} from ${path}`);
+
+            // Create a script element
+            const script = document.createElement('script');
+            script.type = 'text/javascript'; // Regular script, not a module
+            script.src = path;
+
+            // Handle successful load
+            script.onload = function() {
+                console.log(`Successfully loaded feature: ${name}`);
+
+                // Check if the module registered itself globally
+                const globalName = name.replace(/([A-Z])/g, (_, letter) => letter.toLowerCase()) + 'Placeholder';
+
+                if (window[globalName]) {
+                    loadedFeatures[name] = window[globalName];
+                    resolve(window[globalName]);
+                } else {
+                    console.warn(`Module loaded but global object ${globalName} not found`);
+                    const fallbackModule = createFallbackModule(name);
+                    loadedFeatures[name] = fallbackModule;
+                    resolve(fallbackModule);
+                }
+            };
+
+            // Handle load error
+            script.onerror = function(error) {
+                console.error(`Error loading feature ${name}:`, error);
+                const fallbackModule = createFallbackModule(name);
+                loadedFeatures[name] = fallbackModule;
+                resolve(fallbackModule); // Resolve with fallback instead of rejecting
+            };
+
+            // Add script to document
+            document.head.appendChild(script);
+
+        } catch (error) {
+            console.error(`Exception loading feature ${name}:`, error);
+            const fallbackModule = createFallbackModule(name);
+            loadedFeatures[name] = fallbackModule;
+            resolve(fallbackModule); // Resolve with fallback instead of rejecting
+        }
+    });
 }
 
 /**
@@ -86,11 +119,12 @@ function displayFallbackUI(featureName, terminal, editorArea) {
     // Create a tab in the editor area for the feature
     if (editorArea) {
         // Create or find feature tab
-        let featureTab = document.getElementById(`${featureName.toLowerCase().replace(/\s+/g, '-')}Tab`);
+        const formattedName = featureName.replace(/([A-Z])/g, '-$1').toLowerCase();
+        let featureTab = document.getElementById(`${formattedName}-tab`);
         if (!featureTab) {
             featureTab = document.createElement('div');
             featureTab.className = 'editor-tab';
-            featureTab.id = `${featureName.toLowerCase().replace(/\s+/g, '-')}Tab`;
+            featureTab.id = `${formattedName}-tab`;
             featureTab.innerHTML = `
                 <i class="fas fa-exclamation-triangle"></i>
                 <span class="tab-title">${featureName}.js</span>
@@ -99,7 +133,7 @@ function displayFallbackUI(featureName, terminal, editorArea) {
 
             // Add event listener to tab
             featureTab.addEventListener('click', function() {
-                activateFeatureTab(featureName, editorArea);
+                activateFeatureTab(formattedName, editorArea);
             });
 
             // Add event listener to close button
@@ -126,11 +160,11 @@ function displayFallbackUI(featureName, terminal, editorArea) {
         }
 
         // Create or find feature content
-        let featureContent = document.getElementById(`${featureName.toLowerCase().replace(/\s+/g, '-')}Content`);
+        let featureContent = document.getElementById(`${formattedName}-content`);
         if (!featureContent) {
             featureContent = document.createElement('div');
             featureContent.className = 'code-content markdown-content';
-            featureContent.id = `${featureName.toLowerCase().replace(/\s+/g, '-')}Content`;
+            featureContent.id = `${formattedName}-content`;
             featureContent.innerHTML = `
                 <div class="markdown-container">
                     <h1>${featureName} - Module Error</h1>
@@ -166,7 +200,7 @@ function displayFallbackUI(featureName, terminal, editorArea) {
         }
 
         // Activate the feature tab and content
-        activateFeatureTab(featureName, editorArea);
+        activateFeatureTab(formattedName, editorArea);
     }
 }
 
@@ -176,13 +210,12 @@ function displayFallbackUI(featureName, terminal, editorArea) {
  * @param {HTMLElement} editorArea - Editor area DOM element
  */
 function activateFeatureTab(featureName, editorArea) {
-    const tabId = `${featureName.toLowerCase().replace(/\s+/g, '-')}Tab`;
-    const contentId = `${featureName.toLowerCase().replace(/\s+/g, '-')}Content`;
+    const tabId = `${featureName}-tab`;
+    const contentId = `${featureName}-content`;
 
     // Hide all tabs and content
     document.querySelectorAll('.editor-tab').forEach(tab => {
         tab.classList.remove('active');
-        tab.style.display = 'none';
     });
     document.querySelectorAll('.code-content').forEach(content => {
         content.classList.remove('active');
@@ -226,15 +259,25 @@ export function isFeatureLoaded(name) {
  */
 export async function loadAllFeatures() {
     try {
+        // Load features sequentially to avoid race conditions
+        const javaTerminal = await loadFeature('javaTerminal', './features/java-terminal.js');
+        const apiDemo = await loadFeature('apiDemo', './features/api-demo.js');
+        const databaseViewer = await loadFeature('databaseViewer', './features/db-viewer.js');
+        const gitViewer = await loadFeature('gitViewer', './features/git-viewer.js');
+        const buildTools = await loadFeature('buildTools', './features/build-tools.js');
+        const projectDemo = await loadFeature('projectDemo', './features/project-demo.js');
+        const ideTools = await loadFeature('ideTools', './features/ide-tools.js');
+        const codeChallenge = await loadFeature('codeChallenge', './features/code-challenge.js');
+
         const features = {
-            javaTerminal: await loadFeature('Java Terminal', './features/java-terminal.js'),
-            apiDemo: await loadFeature('API Demo', './features/api-demo.js'),
-            databaseViewer: await loadFeature('Database Viewer', './features/db-viewer.js'),
-            gitViewer: await loadFeature('Git Viewer', './features/git-viewer.js'),
-            buildTools: await loadFeature('Build Tools', './features/build-tools.js'),
-            projectDemo: await loadFeature('Project Demo', './features/project-demo.js'),
-            ideTools: await loadFeature('IDE Tools', './features/ide-tools.js'),
-            codeChallenge: await loadFeature('Code Challenge', './features/code-challenge.js')
+            javaTerminal,
+            apiDemo,
+            databaseViewer,
+            gitViewer,
+            buildTools,
+            projectDemo,
+            ideTools,
+            codeChallenge
         };
 
         console.log('All features loaded (or fallbacks created)');

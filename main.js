@@ -18,56 +18,80 @@ function loadScript(url, callback) {
 // Fix import section - define import variables but handle missing modules gracefully
 let javaTerminal, apiDemo, databaseViewer, gitViewer, buildTools, projectDemo, ideTools, codeChallenge;
 
+// Module loading approach that tries ES imports first, then falls back to global objects
+async function loadModuleWithFallback(name, path) {
+    try {
+        // Try ES module import first
+        console.log(`Trying to import ${name} as ES module from ${path}`);
+        const module = await import(path);
+        console.log(`Successfully imported ${name} as ES module`);
+        return module.default;
+    } catch (err) {
+        console.warn(`ES module import failed for ${name}, trying global object fallback:`, err);
+
+        // Check if we already have a global object available
+        const globalName = name.charAt(0).toLowerCase() + name.slice(1);
+        if (window[globalName]) {
+            console.log(`Found global object for ${name}`);
+            return window[globalName];
+        }
+
+        // If no global object yet, attempt to load via script tag
+        return new Promise((resolve, reject) => {
+            loadScript(`./features/${path}`, (err) => {
+                if (err) {
+                    console.error(`Failed to load ${name} via script tag:`, err);
+                    // Return fallback module as last resort
+                    resolve(createFallbackModule(name));
+                } else {
+                    // Check again for global object after script loading
+                    if (window[globalName]) {
+                        console.log(`Successfully loaded ${name} via script tag`);
+                        resolve(window[globalName]);
+                    } else {
+                        console.warn(`Loaded script for ${name}, but no global object found`);
+                        resolve(createFallbackModule(name));
+                    }
+                }
+            });
+        });
+    }
+}
+
 // Safely import modules with proper error handling
 document.addEventListener('DOMContentLoaded', function() {
     // First, make sure we have the terminal panel
     createTerminalPanel();
 
-    // Load code challenge script directly
-    loadScript('./features/code-challenge.js', function(err) {
-        if (err) {
-            console.error("Error loading code-challenge.js:", err);
-        } else {
-            console.log("Code challenge script loaded successfully");
-        }
+    // Try to import all modules with proper fallbacks
+    Promise.all([
+        loadModuleWithFallback('javaTerminal', './features/java-terminal.js'),
+        loadModuleWithFallback('apiDemo', './features/api-demo.js'),
+        loadModuleWithFallback('databaseViewer', './features/db-viewer.js'),
+        loadModuleWithFallback('gitViewer', './features/git-viewer.js'),
+        loadModuleWithFallback('buildTools', './features/build-tools.js'),
+        loadModuleWithFallback('projectDemo', './features/project-demo.js'),
+        loadModuleWithFallback('ideTools', './features/ide-tools.js'),
+        loadModuleWithFallback('codeChallenge', './features/code-challenge.js')
+    ]).then(modules => {
+        // Assign each module to its variable
+        [javaTerminal, apiDemo, databaseViewer, gitViewer, buildTools, projectDemo, ideTools, codeChallenge] = modules;
+        console.log("All modules loaded successfully (or with fallbacks)");
 
-        // Then try to import other modules
-        try {
-            // In browser environments, we need to use dynamic imports
-            Promise.all([
-                import('./features/java-terminal.js').catch(() => ({ default: createFallbackModule('Java Terminal') })),
-                import('./features/api-demo.js').catch(() => ({ default: createFallbackModule('API Demo') })),
-                import('./features/db-viewer.js').catch(() => ({ default: createFallbackModule('Database Viewer') })),
-                import('./features/git-viewer.js').catch(() => ({ default: createFallbackModule('Git Viewer') })),
-                import('./features/build-tools.js').catch(() => ({ default: createFallbackModule('Build Tools') })),
-                import('./features/project-demo.js').catch(() => ({ default: createFallbackModule('Project Demo') })),
-                import('./features/ide-tools.js').catch(() => ({ default: createFallbackModule('IDE Tools') }))
-                // Skip code-challenge.js since we loaded it directly
-            ]).then(modules => {
-                // Assign each module to its variable
-                [javaTerminal, apiDemo, databaseViewer, gitViewer, buildTools, projectDemo, ideTools] =
-                    modules.map(m => m.default);
-                console.log("All modules loaded successfully");
-
-                // Initialize after loading
-                initializePortfolio();
-            }).catch(error => {
-                console.warn("Some modules failed to load:", error);
-                // Initialize anyway with fallbacks
-                initializePortfolio();
-            });
-        } catch (e) {
-            console.warn("Error loading modules:", e);
-            initializePortfolio();
-        }
+        // Initialize after loading
+        initializePortfolio();
+    }).catch(error => {
+        console.warn("Error during module loading:", error);
+        // Initialize anyway with fallbacks
+        initializePortfolio();
     });
 });
 
 // Create fallback module for features that fail to load
 function createFallbackModule(featureName) {
     return {
-        start: function(terminal) {
-            displayModuleErrorMessage(featureName + ' module', terminal);
+        start: function(terminal, editorArea) {
+            displayModuleErrorMessage(featureName, terminal);
         },
         processInput: function() { return false; },
         isActive: function() { return false; }
@@ -655,89 +679,110 @@ function applySyntaxHighlighting() {
     });
 }
 
-// Start code challenge feature
 function startCodingChallenge() {
-    console.log("Starting coding challenge feature");
+  console.log("Starting coding challenge feature");
 
-    // First check if we have the non-module version available
-    if (window.codeChallengePlaceholder && typeof window.codeChallengePlaceholder.start === 'function') {
-        console.log("Using globally available code challenge module");
-        window.codeChallengePlaceholder.start(
-            document.querySelector('.terminal-content'),
-            document.getElementById('editorArea')
-        );
-        return;
+  const terminal = document.querySelector('.terminal-content');
+  const editorArea = document.getElementById('editorArea');
+
+  // Try direct script load first
+  const script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src = './features/code-challenge.js';
+
+  script.onload = function() {
+    console.log("Directly loaded code-challenge.js", !!window.codeChallenge);
+
+    // Try using the global object
+    if (window.codeChallenge && typeof window.codeChallenge.start === 'function') {
+      console.log("Using globally available code challenge module from direct load");
+      window.codeChallenge.start(terminal, editorArea);
+      return;
     }
+  };
 
-    // Fall back to the ES module version if available
-    if (codeChallenge && typeof codeChallenge.start === 'function') {
-        console.log("Using ES module code challenge");
-        codeChallenge.start(
-            document.querySelector('.terminal-content'),
-            document.getElementById('editorArea')
-        );
-        return;
-    }
+  script.onerror = function(error) {
+    console.error("Failed to load code-challenge.js directly:", error);
+    displayModuleErrorMessage('Code Challenge module', terminal);
+  };
 
-    // Final fallback to error message
-    console.error("No code challenge module available");
-    displayModuleErrorMessage('Code Challenge module', document.querySelector('.terminal-content'));
+  document.head.appendChild(script);
 }
-
 // Advanced feature command handlers
 function enterJavaMode() {
+    const terminal = document.querySelector('.terminal-content');
+    const editorArea = document.getElementById('editorArea');
+
     if (javaTerminal && typeof javaTerminal.start === 'function') {
-        javaTerminal.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+        javaTerminal.start(terminal, editorArea);
     } else {
-        displayModuleErrorMessage('Java Terminal module', document.querySelector('.terminal-content'));
+        displayModuleErrorMessage('Java Terminal module', terminal);
     }
 }
 
 function showApiDemo() {
+    const terminal = document.querySelector('.terminal-content');
+    const editorArea = document.getElementById('editorArea');
+
     if (apiDemo && typeof apiDemo.start === 'function') {
-        apiDemo.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+        apiDemo.start(terminal, editorArea);
     } else {
-        displayModuleErrorMessage('API Demo module', document.querySelector('.terminal-content'));
+        displayModuleErrorMessage('API Demo module', terminal);
     }
 }
 
 function showDatabaseViewer() {
+    const terminal = document.querySelector('.terminal-content');
+    const editorArea = document.getElementById('editorArea');
+
     if (databaseViewer && typeof databaseViewer.start === 'function') {
-        databaseViewer.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+        databaseViewer.start(terminal, editorArea);
     } else {
-        displayModuleErrorMessage('Database Viewer module', document.querySelector('.terminal-content'));
+        displayModuleErrorMessage('Database Viewer module', terminal);
     }
 }
 
 function showGitViewer() {
+    const terminal = document.querySelector('.terminal-content');
+    const editorArea = document.getElementById('editorArea');
+
     if (gitViewer && typeof gitViewer.start === 'function') {
-        gitViewer.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+        gitViewer.start(terminal, editorArea);
     } else {
-        displayModuleErrorMessage('Git Viewer module', document.querySelector('.terminal-content'));
+        displayModuleErrorMessage('Git Viewer module', terminal);
     }
 }
 
 function showBuildTools() {
+    const terminal = document.querySelector('.terminal-content');
+    const editorArea = document.getElementById('editorArea');
+
     if (buildTools && typeof buildTools.start === 'function') {
-        buildTools.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+        buildTools.start(terminal, editorArea);
     } else {
-        displayModuleErrorMessage('Build Tools module', document.querySelector('.terminal-content'));
+        displayModuleErrorMessage('Build Tools module', terminal);
     }
 }
 
 function showProjectDemo() {
+    const terminal = document.querySelector('.terminal-content');
+    const editorArea = document.getElementById('editorArea');
+
     if (projectDemo && typeof projectDemo.start === 'function') {
-        projectDemo.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+        projectDemo.start(terminal, editorArea);
     } else {
-        displayModuleErrorMessage('Project Demo module', document.querySelector('.terminal-content'));
+        displayModuleErrorMessage('Project Demo module', terminal);
     }
 }
 
 function showDevelopmentTools() {
+    const terminal = document.querySelector('.terminal-content');
+    const editorArea = document.getElementById('editorArea');
+
     if (ideTools && typeof ideTools.start === 'function') {
-        ideTools.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
+        ideTools.start(terminal, editorArea);
     } else {
-        displayModuleErrorMessage('IDE Tools module', document.querySelector('.terminal-content'));
+        displayModuleErrorMessage('IDE Tools module', terminal);
     }
 }
 
@@ -766,6 +811,8 @@ function displayModuleErrorMessage(moduleName, terminal) {
 function processTerminalCommand(command) {
     try {
         const terminal = document.querySelector('.terminal-content');
+        const editorArea = document.getElementById('editorArea');
+
         if (!terminal) {
             console.error('Terminal content not found for command processing');
             return;
@@ -774,33 +821,33 @@ function processTerminalCommand(command) {
         // Ensure the command is trimmed
         const trimmedCommand = command.trim();
 
-        // Check if in challenge mode via the global placeholder
-        if (window.codeChallengePlaceholder &&
-            typeof window.codeChallengePlaceholder.isActive === 'function' &&
-            window.codeChallengePlaceholder.isActive()) {
+        // First check if code challenge is active (via any method)
+        if ((codeChallenge && typeof codeChallenge.isActive === 'function' && codeChallenge.isActive()) ||
+           (window.codeChallenge && typeof window.codeChallenge.isActive === 'function' && window.codeChallenge.isActive())) {
 
-            return window.codeChallengePlaceholder.processInput(
-                trimmedCommand,
-                terminal,
-                document.getElementById('editorArea')
-            );
+            // Try module version first, then global version
+            if (codeChallenge && typeof codeChallenge.processInput === 'function') {
+                return codeChallenge.processInput(trimmedCommand, terminal, editorArea);
+            } else if (window.codeChallenge && typeof window.codeChallenge.processInput === 'function') {
+                return window.codeChallenge.processInput(trimmedCommand, terminal, editorArea);
+            }
         }
 
-        // Check if any advanced mode is active
+        // Check if any other advanced mode is active
         if (javaTerminal && typeof javaTerminal.isActive === 'function' && javaTerminal.isActive()) {
-            return javaTerminal.processInput(trimmedCommand, terminal, document.getElementById('editorArea'));
+            return javaTerminal.processInput(trimmedCommand, terminal, editorArea);
         } else if (apiDemo && typeof apiDemo.isActive === 'function' && apiDemo.isActive()) {
-            return apiDemo.processInput(trimmedCommand, terminal, document.getElementById('editorArea'));
+            return apiDemo.processInput(trimmedCommand, terminal, editorArea);
         } else if (databaseViewer && typeof databaseViewer.isActive === 'function' && databaseViewer.isActive()) {
-            return databaseViewer.processInput(trimmedCommand, terminal, document.getElementById('editorArea'));
+            return databaseViewer.processInput(trimmedCommand, terminal, editorArea);
         } else if (gitViewer && typeof gitViewer.isActive === 'function' && gitViewer.isActive()) {
-            return gitViewer.processInput(trimmedCommand, terminal, document.getElementById('editorArea'));
+            return gitViewer.processInput(trimmedCommand, terminal, editorArea);
         } else if (buildTools && typeof buildTools.isActive === 'function' && buildTools.isActive()) {
-            return buildTools.processInput(trimmedCommand, terminal, document.getElementById('editorArea'));
+            return buildTools.processInput(trimmedCommand, terminal, editorArea);
         } else if (projectDemo && typeof projectDemo.isActive === 'function' && projectDemo.isActive()) {
-            return projectDemo.processInput(trimmedCommand, terminal, document.getElementById('editorArea'));
+            return projectDemo.processInput(trimmedCommand, terminal, editorArea);
         } else if (ideTools && typeof ideTools.isActive === 'function' && ideTools.isActive()) {
-            return ideTools.processInput(trimmedCommand, terminal, document.getElementById('editorArea'));
+            return ideTools.processInput(trimmedCommand, terminal, editorArea);
         }
 
         const output = document.createElement('div');
@@ -855,327 +902,3 @@ Available commands:
                 break;
 
             case 'about':
-                output.innerHTML = `Opening about.md...`;
-                showSection('about');
-                break;
-
-            case 'skills':
-                output.innerHTML = `Opening skills.md...`;
-                showSection('skills');
-                break;
-
-            case 'projects':
-                output.innerHTML = `Opening projects.md...`;
-                showSection('projects');
-                break;
-
-            case 'experience':
-                output.innerHTML = `Opening experience.md...`;
-                showSection('experience');
-                break;
-
-            case 'hobbies':
-                output.innerHTML = `Opening hobbies.md...`;
-                showSection('hobbies');
-                break;
-
-            case 'contact':
-                output.innerHTML = `Opening contact.md...`;
-                showSection('contact');
-                break;
-
-            case 'github':
-                output.innerHTML = `Opening GitHub profile: github.com/barretttaylor95`;
-                window.open('https://github.com/barretttaylor95', '_blank');
-                break;
-
-            case 'linkedin':
-                output.innerHTML = `Opening LinkedIn profile: linkedin.com/in/barrett-taylor-422237182`;
-                window.open('https://www.linkedin.com/in/barrett-taylor-422237182/', '_blank');
-                break;
-
-            case 'email':
-                output.innerHTML = `Opening email client to contact barrett.taylor95@gmail.com`;
-                window.location.href = 'mailto:barrett.taylor95@gmail.com';
-                break;
-
-            case 'message':
-                promptMessage(terminal);
-                return; // Skip adding output for message command
-
-            case 'clear':
-                // Clear all previous outputs and commands
-                const outputs = terminal.querySelectorAll('.terminal-output, .terminal-prompt:not(:last-child)');
-                outputs.forEach(el => el.remove());
-
-                // Add welcome message
-                const welcomeMsg = document.createElement('div');
-                welcomeMsg.className = 'terminal-output';
-                welcomeMsg.textContent = "Welcome to Barrett Taylor's Interactive CLI.";
-                const helpMsg = document.createElement('div');
-                helpMsg.className = 'terminal-output';
-                helpMsg.textContent = "Type help to see available commands.";
-                terminal.insertBefore(welcomeMsg, terminal.querySelector('.terminal-prompt'));
-                terminal.insertBefore(helpMsg, terminal.querySelector('.terminal-prompt'));
-
-                return; // Skip adding output for clear command
-
-            case '':
-                // Empty command, do nothing
-                return;
-
-            default:
-                output.innerHTML = `Command not found: ${command}<br>Type 'help' to see available commands.`;
-        }
-
-        // Add output to terminal
-        const lastPrompt = terminal.querySelector('.terminal-prompt:last-child');
-        if (lastPrompt) {
-            terminal.insertBefore(output, lastPrompt);
-        } else {
-            terminal.appendChild(output);
-        }
-
-        // Scroll to bottom
-        terminal.scrollTop = terminal.scrollHeight;
-
-    } catch (error) {
-        console.error('Error processing terminal command:', error);
-    }
-}
-
-// Prompt user for a message
-function promptMessage(terminal) {
-    // Create message prompt
-    const msgPrompt = document.createElement('div');
-    msgPrompt.className = 'terminal-output';
-    msgPrompt.innerHTML = 'Enter your message (press Enter to send, ESC to cancel):';
-
-    // Create text area for message
-    const msgInput = document.createElement('textarea');
-    msgInput.style.width = '100%';
-    msgInput.style.height = '80px';
-    msgInput.style.backgroundColor = '#2d2d2d';
-    msgInput.style.color = '#dcdcdc';
-    msgInput.style.border = '1px solid #444';
-    msgInput.style.padding = '8px';
-    msgInput.style.marginTop = '8px';
-    msgInput.style.outline = 'none';
-    msgInput.style.resize = 'none';
-    msgInput.style.fontFamily = "'JetBrains Mono', 'Consolas', monospace";
-
-    const lastPrompt = terminal.querySelector('.terminal-prompt:last-child');
-
-    // Add prompt and input to terminal
-    terminal.insertBefore(msgPrompt, lastPrompt);
-    terminal.insertBefore(msgInput, lastPrompt);
-
-    // Focus the input
-    msgInput.focus();
-
-    // Handle key events
-    msgInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            const message = msgInput.value.trim();
-
-            // Remove the input
-            msgInput.remove();
-
-            if (message) {
-                // Show confirmation
-                const confirmation = document.createElement('div');
-                confirmation.className = 'terminal-output';
-                confirmation.innerHTML = `Message sent:<br>${message}<br><br>Thank you! Your message has been sent to barrett.taylor95@gmail.com`;
-                terminal.insertBefore(confirmation, lastPrompt);
-
-                // Here you would normally send the email via a backend service
-                // For demo purposes, we're just showing the confirmation
-
-                // In a real implementation, you'd send this to your backend
-                console.log(`Message to be sent: ${message}`);
-            } else {
-                const cancelled = document.createElement('div');
-                cancelled.className = 'terminal-output';
-                cancelled.textContent = 'Message cancelled - empty message.';
-                terminal.insertBefore(cancelled, lastPrompt);
-            }
-
-            // Scroll to bottom
-            terminal.scrollTop = terminal.scrollHeight;
-        } else if (e.key === 'Escape') {
-            // Remove the input and cancel
-            msgInput.remove();
-            const cancelled = document.createElement('div');
-            cancelled.className = 'terminal-output';
-            cancelled.textContent = 'Message cancelled.';
-            terminal.insertBefore(cancelled, lastPrompt);
-
-            // Scroll to bottom
-            terminal.scrollTop = terminal.scrollHeight;
-        }
-    });
-}
-
-// Handle terminal input
-function setupInteractiveTerminal() {
-    try {
-        const terminal = document.querySelector('.terminal-content');
-        if (!terminal) {
-            console.error('Terminal content not found for setup');
-            return;
-        }
-
-        // Find the input field
-        const lastPrompt = terminal.querySelector('.terminal-prompt:last-child');
-        if (!lastPrompt) {
-            console.error('Terminal prompt not found');
-            return;
-        }
-
-        const terminalInput = lastPrompt.querySelector('.terminal-input');
-        if (!terminalInput) {
-            console.error('Terminal input not found');
-            return;
-        }
-
-        // Focus on click anywhere in the terminal
-        terminal.addEventListener('click', function(e) {
-            // But only if we're not clicking on another interactive element
-            if (!e.target.closest('a, button, [contenteditable], textarea')) {
-                terminalInput.focus();
-            }
-        });
-
-        // Handle keyboard input
-        terminalInput.addEventListener('keydown', function(e) {
-            // Command history navigation
-            if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                navigateCommandHistory('up', this);
-                return;
-            }
-
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                navigateCommandHistory('down', this);
-                return;
-            }
-
-            if (e.key === 'Enter') {
-                e.preventDefault();
-
-                // Get command
-                const command = this.textContent.trim();
-
-                // Save command to currentTerminalInput and history
-                currentTerminalInput = command;
-
-                // Add to command history if not empty
-                if (command && (commandHistory.length === 0 || commandHistory[0] !== command)) {
-                    commandHistory.unshift(command);
-                    // Reset history index
-                    historyIndex = -1;
-
-                    // Save to localStorage
-                    try {
-                        safeLocalStorage('set', 'terminalCommandHistory', JSON.stringify(commandHistory.slice(0, 20)));
-                    } catch (err) {
-                        console.warn('Error saving command history:', err);
-                    }
-                }
-
-                // Clear input
-                this.textContent = '';
-
-                // Clone current prompt
-                const newPrompt = lastPrompt.cloneNode(true);
-                const newInput = newPrompt.querySelector('.terminal-input');
-                if (newInput) {
-                    newInput.textContent = '';
-                    newInput.setAttribute('contenteditable', 'true');
-                    newInput.setAttribute('spellcheck', 'false');
-
-                    // Setup keyboard event for new input
-                    newInput.addEventListener('keydown', arguments.callee);
-                }
-
-                // Replace current prompt with non-editable version showing command
-                lastPrompt.querySelector('.terminal-input').textContent = command;
-                lastPrompt.querySelector('.terminal-input').removeAttribute('contenteditable');
-
-                // Remove cursor from current prompt
-                const oldCursor = lastPrompt.querySelector('.typing-cursor');
-                if (oldCursor) oldCursor.remove();
-
-                // Process command
-                processTerminalCommand(command);
-
-                // Add new prompt
-                terminal.appendChild(newPrompt);
-
-                // Focus new input
-                newInput.focus();
-
-                // Scroll to bottom
-                terminal.scrollTop = terminal.scrollHeight;
-            }
-        });
-
-        // Load command history from localStorage
-        try {
-            const savedHistory = safeLocalStorage('parse', 'terminalCommandHistory');
-            if (savedHistory && Array.isArray(savedHistory)) {
-                commandHistory = savedHistory;
-            }
-        } catch (err) {
-            console.warn('Error loading command history:', err);
-        }
-
-        console.log('Interactive terminal setup complete');
-    } catch (error) {
-        console.error('Error setting up interactive terminal:', error);
-    }
-}
-
-// Navigate command history
-function navigateCommandHistory(direction, inputElement) {
-    try {
-        if (!commandHistory.length) return;
-
-        if (direction === 'up') {
-            // Going back in history
-            if (historyIndex < commandHistory.length - 1) {
-                historyIndex++;
-                inputElement.textContent = commandHistory[historyIndex];
-
-                // Place cursor at the end of the text
-                const range = document.createRange();
-                const sel = window.getSelection();
-                range.selectNodeContents(inputElement);
-                range.collapse(false);
-                sel.removeAllRanges();
-                sel.addRange(range);
-            }
-        } else if (direction === 'down') {
-            // Going forward in history
-            if (historyIndex > 0) {
-                historyIndex--;
-                inputElement.textContent = commandHistory[historyIndex];
-
-                // Place cursor at the end of the text
-                const range = document.createRange();
-                const sel = window.getSelection();
-                range.selectNodeContents(inputElement);
-                range.collapse(false);
-                sel.removeAllRanges();
-                sel.addRange(range);
-            } else if (historyIndex === 0) {
-                historyIndex = -1;
-                inputElement.textContent = '';
-            }
-        }
-    } catch (error) {
-        console.error('Error navigating command history:', error);
-    }
-}
