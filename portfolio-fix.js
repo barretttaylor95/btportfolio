@@ -1,16 +1,45 @@
-// Fix 1: Force hide loading overlay to ensure site visibility
+/**
+ * Portfolio Fix Script
+ * This script provides fallbacks and fixes for critical functionality
+ * in case the main JavaScript encounters issues.
+ */
+
+// Force hide loading overlay to ensure site visibility
 document.addEventListener('DOMContentLoaded', function() {
-  const loadingOverlay = document.getElementById('loadingOverlay');
-  if (loadingOverlay) {
-    loadingOverlay.style.display = 'none';
-  }
+  // This will run after all content has loaded
+  setTimeout(function() {
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) {
+      loadingOverlay.style.display = 'none';
+    }
+  }, 1000); // Short timeout to ensure it runs even if other JS is delayed
 });
 
-// Fix 2: Create terminal panel if missing
+// Create the terminal panel if it doesn't exist after a delay
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function() {
+    if (!document.getElementById('terminalPanel')) {
+      createTerminalPanel();
+    }
+
+    if (!document.querySelector('.status-bar')) {
+      createStatusBar();
+    }
+
+    // Fix layout if needed
+    fixLayoutPositioning();
+
+    // Setup basic functionality
+    setupTerminalFunctionality();
+    fixTabNavigation();
+    makeFilesClickable();
+  }, 2000); // Wait for main.js to run first, this is a fallback
+});
+
+// Create terminal panel if missing
 function createTerminalPanel() {
-  if (document.getElementById('terminalPanel')) {
-    return; // Already exists
-  }
+  const contentArea = document.querySelector('.content-area');
+  if (!contentArea) return;
 
   // Create terminal panel container
   const terminalPanel = document.createElement('div');
@@ -26,6 +55,19 @@ function createTerminalPanel() {
   terminalPanel.style.display = 'flex';
   terminalPanel.style.flexDirection = 'column';
   terminalPanel.style.zIndex = '3';
+
+  // Create terminal resize handle - ENSURE THIS IS FIRST FOR PROPER Z-INDEX STACKING
+  const resizeHandle = document.createElement('div');
+  resizeHandle.id = 'terminalResizeHandle';
+  resizeHandle.className = 'resize-handle vertical-resize-handle';
+  resizeHandle.style.position = 'absolute';
+  resizeHandle.style.cursor = 'row-resize';
+  resizeHandle.style.height = '5px';
+  resizeHandle.style.left = '0';
+  resizeHandle.style.right = '0';
+  resizeHandle.style.top = '0';
+  resizeHandle.style.zIndex = '100';
+  terminalPanel.appendChild(resizeHandle);
 
   // Create terminal header
   const terminalHeader = document.createElement('div');
@@ -64,31 +106,83 @@ function createTerminalPanel() {
     </div>
   `;
 
-  // Create terminal resize handle
-  const resizeHandle = document.createElement('div');
-  resizeHandle.id = 'terminalResizeHandle';
-  resizeHandle.className = 'resize-handle vertical-resize-handle';
-  resizeHandle.style.position = 'absolute';
-  resizeHandle.style.cursor = 'row-resize';
-  resizeHandle.style.height = '5px';
-  resizeHandle.style.left = '0';
-  resizeHandle.style.right = '0';
-  resizeHandle.style.top = '0';
-  resizeHandle.style.zIndex = '50';
-  
-  // Add all components together
+  // Add components to the terminal panel
   terminalPanel.appendChild(terminalHeader);
   terminalPanel.appendChild(terminalContent);
-  terminalPanel.appendChild(resizeHandle);
-  
-  // Add to the page
-  document.querySelector('.content-area').appendChild(terminalPanel);
-  
+
+  // Add terminal panel to the page
+  contentArea.appendChild(terminalPanel);
+
+  // Set up resize handle interaction
+  setupResizeHandle(resizeHandle);
+
   // Set up terminal functionality
   setupTerminalFunctionality();
 }
 
-// Fix 3: Create status bar if missing
+// Add resizing functionality to the terminal panel
+function setupResizeHandle(resizeHandle) {
+  if (!resizeHandle) return;
+
+  let isDragging = false;
+  let startY = 0;
+  let startHeight = 0;
+
+  // Mouse down - start resizing
+  resizeHandle.addEventListener('mousedown', function(e) {
+    // Prevent text selection during resize
+    e.preventDefault();
+    e.stopPropagation();
+
+    const terminalPanel = document.getElementById('terminalPanel');
+    if (!terminalPanel) return;
+
+    isDragging = true;
+    startY = e.clientY;
+    startHeight = parseInt(terminalPanel.offsetHeight);
+
+    document.body.style.cursor = 'row-resize';
+
+    // Disable text selection during resize
+    document.body.style.userSelect = 'none';
+  });
+
+  // Mouse move - resize terminal
+  document.addEventListener('mousemove', function(e) {
+    if (!isDragging) return;
+
+    const terminalPanel = document.getElementById('terminalPanel');
+    const editorArea = document.getElementById('editorArea');
+    if (!terminalPanel || !editorArea) return;
+
+    const deltaY = startY - e.clientY;
+    const newHeight = Math.max(100, Math.min(window.innerHeight - 200, startHeight + deltaY));
+
+    terminalPanel.style.height = newHeight + 'px';
+    editorArea.style.bottom = newHeight + 'px';
+  });
+
+  // Mouse up - stop resizing
+  document.addEventListener('mouseup', function() {
+    if (isDragging) {
+      isDragging = false;
+      document.body.style.cursor = 'default';
+      document.body.style.userSelect = '';
+
+      // Try to save the terminal height to localStorage
+      try {
+        const terminalPanel = document.getElementById('terminalPanel');
+        if (terminalPanel) {
+          localStorage.setItem('terminalHeight', terminalPanel.offsetHeight);
+        }
+      } catch (e) {
+        console.warn('Unable to save terminal height to localStorage:', e);
+      }
+    }
+  });
+}
+
+// Create status bar if missing
 function createStatusBar() {
   if (document.querySelector('.status-bar')) {
     return; // Already exists
@@ -109,7 +203,7 @@ function createStatusBar() {
   statusBar.style.left = '0';
   statusBar.style.right = '0';
   statusBar.style.zIndex = '5';
-  
+
   statusBar.innerHTML = `
     <div class="status-item">
       <i class="fas fa-code-branch"></i> main
@@ -122,11 +216,11 @@ function createStatusBar() {
       <div class="status-item">UTF-8</div>
     </div>
   `;
-  
+
   document.querySelector('.content-area').appendChild(statusBar);
 }
 
-// Fix 4: Correct layout positioning
+// Correct layout positioning
 function fixLayoutPositioning() {
   // Fix project directory
   const projectDirectory = document.getElementById('projectDirectory');
@@ -167,13 +261,13 @@ function fixLayoutPositioning() {
   }
 }
 
-// Fix 5: Basic terminal functionality
+// Basic terminal functionality
 function setupTerminalFunctionality() {
   const terminalContent = document.querySelector('.terminal-content');
   if (!terminalContent) return;
 
   // Find or create terminal input
-  let terminalInput = terminalContent.querySelector('.terminal-input');
+  let terminalInput = terminalContent.querySelector('.terminal-prompt:last-child .terminal-input');
   if (!terminalInput) {
     const newPrompt = document.createElement('div');
     newPrompt.className = 'terminal-prompt';
@@ -186,25 +280,37 @@ function setupTerminalFunctionality() {
     terminalInput = newPrompt.querySelector('.terminal-input');
   }
 
-  // Set up command handling
-  terminalInput.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      
-      // Get command
-      const command = this.textContent.trim();
-      
-      // Clear input
-      this.textContent = '';
-      
-      // Create output element
-      const output = document.createElement('div');
-      output.className = 'terminal-output';
-      
-      // Process different commands
-      switch (command.toLowerCase()) {
-        case 'help':
-          output.innerHTML = `
+  // Make terminal clickable to focus
+  terminalContent.addEventListener('click', function(e) {
+    // Only focus if not clicking another interactive element
+    if (!e.target.closest('a, button, [contenteditable], textarea')) {
+      const input = this.querySelector('.terminal-prompt:last-child .terminal-input');
+      if (input) input.focus();
+    }
+  });
+
+  // Set up command handling if not already set up
+  if (!terminalInput.getAttribute('data-initialized')) {
+    terminalInput.setAttribute('data-initialized', 'true');
+
+    terminalInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+
+        // Get command
+        const command = this.textContent.trim();
+
+        // Clear input
+        this.textContent = '';
+
+        // Create output element
+        const output = document.createElement('div');
+        output.className = 'terminal-output';
+
+        // Process different commands
+        switch (command.toLowerCase()) {
+          case 'help':
+            output.innerHTML = `
 Available commands:
 
   about       - View my profile information
@@ -229,206 +335,227 @@ Available commands:
   tools       - View development tools showcase
   challenge   - Try coding challenges
 `;
-          break;
-          
-        case 'about':
-        case 'skills':
-        case 'projects':
-        case 'experience':
-        case 'hobbies':
-        case 'contact':
-          output.innerHTML = `Opening ${command}.md...`;
-          
-          // Try to activate the tab
-          try {
-            const tabToActivate = document.getElementById(`${command}Tab`);
-            if (tabToActivate) {
-              // Show tab
-              document.querySelectorAll('.editor-tab').forEach(tab => {
-                tab.style.display = 'none';
-                tab.classList.remove('active');
-              });
-              tabToActivate.style.display = 'flex';
-              tabToActivate.classList.add('active');
-              
-              // Show content
-              document.querySelectorAll('.code-content').forEach(content => {
-                content.classList.remove('active');
-              });
-              document.getElementById(`${command}Content`).classList.add('active');
+            break;
+
+          case 'about':
+          case 'skills':
+          case 'projects':
+          case 'experience':
+          case 'hobbies':
+          case 'contact':
+            output.innerHTML = `Opening ${command}.md...`;
+
+            // Try to activate the tab
+            try {
+              const tabToActivate = document.getElementById(`${command}Tab`);
+              if (tabToActivate) {
+                // Show tab
+                document.querySelectorAll('.editor-tab').forEach(tab => {
+                  tab.style.display = 'none';
+                  tab.classList.remove('active');
+                });
+                tabToActivate.style.display = 'flex';
+                tabToActivate.classList.add('active');
+
+                // Show content
+                document.querySelectorAll('.code-content').forEach(content => {
+                  content.classList.remove('active');
+                });
+                document.getElementById(`${command}Content`).classList.add('active');
+              }
+            } catch (err) {
+              console.error(`Error activating ${command} tab:`, err);
             }
-          } catch (err) {
-            console.error(`Error activating ${command} tab:`, err);
-          }
-          break;
-          
-        case 'github':
-          output.innerHTML = `Opening GitHub profile: github.com/barretttaylor95`;
-          window.open('https://github.com/barretttaylor95', '_blank');
-          break;
-          
-        case 'linkedin':
-          output.innerHTML = `Opening LinkedIn profile: linkedin.com/in/barrett-taylor-422237182`;
-          window.open('https://www.linkedin.com/in/barrett-taylor-422237182/', '_blank');
-          break;
-          
-        case 'email':
-          output.innerHTML = `Opening email client to contact barrett.taylor95@gmail.com`;
-          window.location.href = 'mailto:barrett.taylor95@gmail.com';
-          break;
-          
-        case 'clear':
-          // Clear all outputs and previous prompts
-          const outputs = terminalContent.querySelectorAll('.terminal-output, .terminal-prompt:not(:last-child)');
-          outputs.forEach(el => el.remove());
-          
-          // Add welcome message
-          const welcomeMsg = document.createElement('div');
-          welcomeMsg.className = 'terminal-output';
-          welcomeMsg.textContent = "Welcome to Barrett Taylor's Interactive CLI.";
-          const helpMsg = document.createElement('div');
-          helpMsg.className = 'terminal-output';
-          helpMsg.textContent = "Type help to see available commands.";
-          
-          terminalContent.insertBefore(helpMsg, terminalContent.querySelector('.terminal-prompt'));
-          terminalContent.insertBefore(welcomeMsg, helpMsg);
-          return; // Skip adding output for clear command
-          
-        case '':
-          // Empty command, do nothing
-          return;
-        
-        // Handle advanced features (stubs)
-        case 'java':
-          output.innerHTML = `Starting Java REPL mode...`;
-          if (window.javaTerminal && typeof window.javaTerminal.start === 'function') {
-            window.javaTerminal.start(terminalContent, document.getElementById('editorArea'));
-          } else {
-            output.innerHTML = `Java REPL mode not available.`;
-          }
-          break;
-          
-        case 'api':
-          output.innerHTML = `Starting API demo...`;
-          if (window.apiDemo && typeof window.apiDemo.start === 'function') {
-            window.apiDemo.start(terminalContent, document.getElementById('editorArea'));
-          } else {
-            output.innerHTML = `API demo not available.`;
-          }
-          break;
-          
-        case 'database':
-          output.innerHTML = `Opening database schema viewer...`;
-          if (window.databaseViewer && typeof window.databaseViewer.start === 'function') {
-            window.databaseViewer.start(terminalContent, document.getElementById('editorArea'));
-          } else {
-            output.innerHTML = `Database schema viewer not available.`;
-          }
-          break;
-          
-        case 'git':
-          output.innerHTML = `Starting Git repository viewer...`;
-          if (window.gitViewer && typeof window.gitViewer.start === 'function') {
-            window.gitViewer.start(terminalContent, document.getElementById('editorArea'));
-          } else {
-            output.innerHTML = `Git repository viewer not available.`;
-          }
-          break;
-          
-        case 'build':
-          output.innerHTML = `Opening build tools...`;
-          if (window.buildTools && typeof window.buildTools.start === 'function') {
-            window.buildTools.start(terminalContent, document.getElementById('editorArea'));
-          } else {
-            output.innerHTML = `Build tools not available.`;
-          }
-          break;
-          
-        case 'demos':
-          output.innerHTML = `Starting project demos...`;
-          if (window.projectDemo && typeof window.projectDemo.start === 'function') {
-            window.projectDemo.start(terminalContent, document.getElementById('editorArea'));
-          } else {
-            output.innerHTML = `Project demos not available.`;
-          }
-          break;
-          
-        case 'tools':
-          output.innerHTML = `Opening development tools showcase...`;
-          if (window.ideTools && typeof window.ideTools.start === 'function') {
-            window.ideTools.start(terminalContent, document.getElementById('editorArea'));
-          } else {
-            output.innerHTML = `Development tools showcase not available.`;
-          }
-          break;
-          
-        case 'challenge':
-          output.innerHTML = `Starting coding challenge...`;
-          if (window.codeChallenge && typeof window.codeChallenge.start === 'function') {
-            window.codeChallenge.start(terminalContent, document.getElementById('editorArea'));
-          } else {
-            output.innerHTML = `Coding challenge not available.`;
-          }
-          break;
-          
-        default:
-          output.innerHTML = `Command not found: ${command}<br>Type 'help' to see available commands.`;
+            break;
+
+          case 'github':
+            output.innerHTML = `Opening GitHub profile: github.com/barretttaylor95`;
+            window.open('https://github.com/barretttaylor95', '_blank');
+            break;
+
+          case 'linkedin':
+            output.innerHTML = `Opening LinkedIn profile: linkedin.com/in/barrett-taylor-422237182`;
+            window.open('https://www.linkedin.com/in/barrett-taylor-422237182/', '_blank');
+            break;
+
+          case 'email':
+            output.innerHTML = `Opening email client to contact barrett.taylor95@gmail.com`;
+            window.location.href = 'mailto:barrett.taylor95@gmail.com';
+            break;
+
+          case 'clear':
+            // Clear all outputs and previous prompts
+            const outputs = terminalContent.querySelectorAll('.terminal-output, .terminal-prompt:not(:last-child)');
+            outputs.forEach(el => el.remove());
+
+            // Add welcome message
+            const welcomeMsg = document.createElement('div');
+            welcomeMsg.className = 'terminal-output';
+            welcomeMsg.textContent = "Welcome to Barrett Taylor's Interactive CLI.";
+            const helpMsg = document.createElement('div');
+            helpMsg.className = 'terminal-output';
+            helpMsg.textContent = "Type help to see available commands.";
+
+            terminalContent.insertBefore(helpMsg, terminalContent.querySelector('.terminal-prompt'));
+            terminalContent.insertBefore(welcomeMsg, helpMsg);
+            return; // Skip adding output for clear command
+
+          case 'message':
+            promptMessage(terminalContent);
+            return; // Skip adding output for message command
+
+          case '':
+            // Empty command, do nothing
+            return;
+
+          // Handle advanced features requests (even if modules aren't loaded)
+          case 'java':
+          case 'api':
+          case 'database':
+          case 'git':
+          case 'build':
+          case 'demos':
+          case 'tools':
+          case 'challenge':
+            if (window[command + 'Viewer'] && typeof window[command + 'Viewer'].start === 'function') {
+              window[command + 'Viewer'].start(terminalContent, document.getElementById('editorArea'));
+            } else if (command === 'java' && window.javaTerminal && typeof window.javaTerminal.start === 'function') {
+              window.javaTerminal.start(terminalContent, document.getElementById('editorArea'));
+            } else if (command === 'challenge' && window.codeChallenge && typeof window.codeChallenge.start === 'function') {
+              window.codeChallenge.start(terminalContent, document.getElementById('editorArea'));
+            } else {
+              output.innerHTML = `<span style="color: #cc7832;">${command}</span> feature demonstration is not available. Please check back later.`;
+            }
+            break;
+
+          default:
+            output.innerHTML = `Command not found: ${command}<br>Type 'help' to see available commands.`;
+        }
+
+        // Clone current prompt
+        const currentPrompt = terminalContent.querySelector('.terminal-prompt:last-child');
+        const newPrompt = currentPrompt.cloneNode(true);
+        const newInput = newPrompt.querySelector('.terminal-input');
+        newInput.textContent = '';
+        newInput.setAttribute('contenteditable', 'true');
+        newInput.setAttribute('data-initialized', 'true');
+
+        // Update current prompt to show entered command
+        currentPrompt.querySelector('.terminal-input').textContent = command;
+        currentPrompt.querySelector('.terminal-input').removeAttribute('contenteditable');
+
+        // Remove cursor from old prompt
+        const oldCursor = currentPrompt.querySelector('.typing-cursor');
+        if (oldCursor) oldCursor.remove();
+
+        // Add output and new prompt
+        terminalContent.appendChild(output);
+        terminalContent.appendChild(newPrompt);
+
+        // Focus new input
+        newInput.focus();
+
+        // Add event listener to new input
+        newInput.addEventListener('keydown', arguments.callee);
+
+        // Scroll to bottom
+        terminalContent.scrollTop = terminalContent.scrollHeight;
       }
-      
-      // Clone current prompt
-      const currentPrompt = terminalContent.querySelector('.terminal-prompt:last-child');
-      const newPrompt = currentPrompt.cloneNode(true);
-      const newInput = newPrompt.querySelector('.terminal-input');
-      newInput.textContent = '';
-      newInput.setAttribute('contenteditable', 'true');
-      
-      // Update current prompt to show entered command
-      currentPrompt.querySelector('.terminal-input').textContent = command;
-      currentPrompt.querySelector('.terminal-input').removeAttribute('contenteditable');
-      
-      // Remove cursor from old prompt
-      const oldCursor = currentPrompt.querySelector('.typing-cursor');
-      if (oldCursor) oldCursor.remove();
-      
-      // Add output and new prompt
-      terminalContent.appendChild(output);
-      terminalContent.appendChild(newPrompt);
-      
-      // Focus new input
-      newInput.focus();
-      
-      // Add event listener to new input
-      newInput.addEventListener('keydown', arguments.callee);
-      
-      // Scroll to bottom
-      terminalContent.scrollTop = terminalContent.scrollHeight;
-    }
-  });
-  
+    });
+  }
+
   // Focus the input
   terminalInput.focus();
-  
-  // Make terminal clickable to focus
-  terminalContent.addEventListener('click', function(e) {
-    // Only focus if not clicking another interactive element
-    if (!e.target.closest('a, button, [contenteditable], textarea')) {
-      const input = this.querySelector('.terminal-prompt:last-child .terminal-input');
-      if (input) input.focus();
+}
+
+// Function to handle message command
+function promptMessage(terminal) {
+  // Create message prompt
+  const msgPrompt = document.createElement('div');
+  msgPrompt.className = 'terminal-output';
+  msgPrompt.innerHTML = 'Enter your message (press Enter to send, ESC to cancel):';
+
+  // Create text area for message
+  const msgInput = document.createElement('textarea');
+  msgInput.style.width = '100%';
+  msgInput.style.height = '80px';
+  msgInput.style.backgroundColor = '#2d2d2d';
+  msgInput.style.color = '#dcdcdc';
+  msgInput.style.border = '1px solid #444';
+  msgInput.style.padding = '8px';
+  msgInput.style.marginTop = '8px';
+  msgInput.style.outline = 'none';
+  msgInput.style.resize = 'none';
+  msgInput.style.fontFamily = "'JetBrains Mono', 'Consolas', monospace";
+
+  const lastPrompt = terminal.querySelector('.terminal-prompt:last-child');
+
+  // Add prompt and input to terminal
+  terminal.insertBefore(msgPrompt, lastPrompt);
+  terminal.insertBefore(msgInput, lastPrompt);
+
+  // Focus the input
+  msgInput.focus();
+
+  // Handle key events
+  msgInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      const message = msgInput.value.trim();
+
+      // Remove the input
+      msgInput.remove();
+
+      if (message) {
+        // Show confirmation
+        const confirmation = document.createElement('div');
+        confirmation.className = 'terminal-output';
+        confirmation.innerHTML = `Message sent:<br>${message}<br><br>Thank you! Your message has been sent to barrett.taylor95@gmail.com`;
+        terminal.insertBefore(confirmation, lastPrompt);
+
+        // Here you would normally send the email via a backend service
+        // For demo purposes, we're just showing the confirmation
+
+        // In a real implementation, you'd send this to your backend
+        console.log(`Message to be sent: ${message}`);
+      } else {
+        const cancelled = document.createElement('div');
+        cancelled.className = 'terminal-output';
+        cancelled.textContent = 'Message cancelled - empty message.';
+        terminal.insertBefore(cancelled, lastPrompt);
+      }
+
+      // Scroll to bottom
+      terminal.scrollTop = terminal.scrollHeight;
+    } else if (e.key === 'Escape') {
+      // Remove the input and cancel
+      msgInput.remove();
+      const cancelled = document.createElement('div');
+      cancelled.className = 'terminal-output';
+      cancelled.textContent = 'Message cancelled.';
+      terminal.insertBefore(cancelled, lastPrompt);
+
+      // Scroll to bottom
+      terminal.scrollTop = terminal.scrollHeight;
     }
   });
 }
 
-// Fix 6: Ensure tabs work correctly
+// Ensure tabs work correctly
 function fixTabNavigation() {
   // Make sure tabs are clickable
   document.querySelectorAll('.editor-tab').forEach(tab => {
+    // Skip if already has click handler
+    if (tab.getAttribute('data-click-initialized')) return;
+    tab.setAttribute('data-click-initialized', 'true');
+
     tab.addEventListener('click', function(e) {
       e.stopPropagation();
-      
+
       // Get section from tab ID
       const tabId = this.id;
       const section = tabId.replace('Tab', '');
-      
+
       // Hide all tabs and content
       document.querySelectorAll('.editor-tab').forEach(t => {
         t.style.display = 'none';
@@ -437,18 +564,18 @@ function fixTabNavigation() {
       document.querySelectorAll('.code-content').forEach(c => {
         c.classList.remove('active');
       });
-      
+
       // Show this tab and its content
       this.style.display = 'flex';
       this.classList.add('active');
-      
+
       const contentId = `${section}Content`;
       const content = document.getElementById(contentId);
       if (content) {
         content.classList.add('active');
       }
     });
-    
+
     // Make close buttons work
     const closeBtn = tab.querySelector('.close-tab');
     if (closeBtn) {
@@ -470,13 +597,17 @@ function fixTabNavigation() {
   });
 }
 
-// Fix 7: Make project directory files clickable
+// Make project directory files clickable
 function makeFilesClickable() {
   document.querySelectorAll('.tree-file').forEach(file => {
-    file.addEventListener('click', function() {
+    if (file.getAttribute('data-click-initialized')) return;
+    file.setAttribute('data-click-initialized', 'true');
+
+    file.addEventListener('click', function(e) {
+      e.stopPropagation();
       const fileName = this.textContent.trim();
       const section = fileName.replace('.md', '');
-      
+
       // Find corresponding tab
       const tab = document.getElementById(`${section}Tab`);
       if (tab) {
@@ -484,17 +615,21 @@ function makeFilesClickable() {
       }
     });
   });
-  
+
   // Make sure folder toggle works
   document.querySelectorAll('.tree-item').forEach(folderItem => {
-    folderItem.addEventListener('click', function() {
+    if (folderItem.getAttribute('data-click-initialized')) return;
+    folderItem.setAttribute('data-click-initialized', 'true');
+
+    folderItem.addEventListener('click', function(e) {
+      e.stopPropagation();
       const nestedFiles = this.nextElementSibling;
       const icon = this.querySelector('.fa-chevron-right');
-      
+
       if (nestedFiles && nestedFiles.classList.contains('nested-files')) {
         const isExpanded = nestedFiles.style.display === 'block';
         nestedFiles.style.display = isExpanded ? 'none' : 'block';
-        
+
         if (icon) {
           icon.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(90deg)';
         }
@@ -503,83 +638,23 @@ function makeFilesClickable() {
   });
 }
 
-// Fix 8: Master initialization function
-function initializePortfolio() {
-  // Step 1: Ensure loading overlay is gone
-  const loadingOverlay = document.getElementById('loadingOverlay');
-  if (loadingOverlay) {
-    loadingOverlay.style.display = 'none';
-  }
-  
-  // Step 2: Create missing components
-  createTerminalPanel();
-  createStatusBar();
-  
-  // Step 3: Fix layout
-  fixLayoutPositioning();
-  
-  // Step 4: Set up interactions
-  setupTerminalFunctionality();
-  fixTabNavigation();
-  makeFilesClickable();
-  
-  // Step 5: Set basic stubs for advanced features
-  window.javaTerminal = {
-    start: () => console.log("Java Terminal started"),
-    processInput: () => true,
-    isActive: () => false
-  };
-  
-  window.apiDemo = {
-    start: () => console.log("API Demo started"),
-    processInput: () => true,
-    isActive: () => false
-  };
-  
-  window.databaseViewer = {
-    start: () => console.log("Database Viewer started"),
-    processInput: () => true,
-    isActive: () => false
-  };
-  
-  window.gitViewer = {
-    start: () => console.log("Git Viewer started"),
-    processInput: () => true,
-    isActive: () => false
-  };
-  
-  window.buildTools = {
-    start: () => console.log("Build Tools started"),
-    processInput: () => true,
-    isActive: () => false
-  };
-  
-  window.projectDemo = {
-    start: () => console.log("Project Demo started"),
-    processInput: () => true,
-    isActive: () => false
-  };
-  
-  window.ideTools = {
-    start: () => console.log("IDE Tools started"),
-    processInput: () => true,
-    isActive: () => false
-  };
-  
-  window.codeChallenge = {
-    start: () => console.log("Code Challenge started"),
-    processInput: () => true,
-    isActive: () => false
-  };
-  
-  // Show default tab
-  const aboutTab = document.getElementById('aboutTab');
-  if (aboutTab) {
-    aboutTab.click();
-  }
-  
-  console.log("Portfolio initialization complete");
-}
+// Define global toggle folder function if needed
+if (!window.toggleFolder) {
+  window.toggleFolder = function(element) {
+    try {
+      const nestedFiles = element.nextElementSibling;
+      const icon = element.querySelector('.fa-chevron-right');
 
-// Run initialization when DOM is ready
-document.addEventListener('DOMContentLoaded', initializePortfolio);
+      if (nestedFiles && nestedFiles.classList.contains('nested-files')) {
+        const isExpanded = nestedFiles.style.display === 'block';
+        nestedFiles.style.display = isExpanded ? 'none' : 'block';
+
+        if (icon) {
+          icon.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(90deg)';
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling folder:', error);
+    }
+  };
+}

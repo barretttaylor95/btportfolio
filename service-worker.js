@@ -1,6 +1,6 @@
 // Service Worker for Barrett Taylor Portfolio
 
-const CACHE_NAME = 'barrett-taylor-portfolio-v1.2';
+const CACHE_NAME = 'barrett-taylor-portfolio-v1.3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -24,11 +24,7 @@ const ASSETS_TO_CACHE = [
   '/features/build-tools.js',
   '/features/project-demo.js',
   '/features/ide-tools.js',
-  '/features/code-challenge.js',
-  '/assets/project-data/petpals.json',
-  '/assets/api-schemas/petpals-api.json',
-  '/assets/db-schemas/petpals-db.json',
-  '/assets/code-samples/java-samples.json'
+  '/features/code-challenge.js'
 ];
 
 // Install event - caching assets with improved error handling
@@ -39,7 +35,7 @@ self.addEventListener('install', event => {
     caches.open(CACHE_NAME)
       .then(cache => {
         console.log('[Service Worker] Caching all assets');
-        // Use cache.addAll with Promise.allSettled to handle partial failures
+        // Use Promise.allSettled to handle partial failures without breaking the installation
         return Promise.allSettled(
           ASSETS_TO_CACHE.map(url => {
             return cache.add(url).catch(error => {
@@ -82,11 +78,12 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch event - serve from cache or network
+// Fetch event - serve from cache or network with improved error handling
 self.addEventListener('fetch', event => {
   // Skip cross-origin requests
   if (!event.request.url.startsWith(self.location.origin) &&
       !event.request.url.startsWith('https://fonts.googleapis.com') &&
+      !event.request.url.startsWith('https://fonts.gstatic.com') &&
       !event.request.url.startsWith('https://cdnjs.cloudflare.com')) {
     return;
   }
@@ -112,13 +109,26 @@ self.addEventListener('fetch', event => {
             caches.open(CACHE_NAME)
               .then(cache => {
                 cache.put(event.request, responseToCache);
+              })
+              .catch(err => {
+                console.warn('[Service Worker] Error caching new resource:', err);
               });
 
             return response;
           })
           .catch(error => {
             console.error('[Service Worker] Fetch failed:', error);
-            // You could return a custom offline page here
+
+            // If it's an HTML request, return a custom offline page
+            if (event.request.headers.get('Accept').includes('text/html')) {
+              return caches.match('/index.html');
+            }
+
+            // Return graceful error for other resource types
+            return new Response('Network error happened', {
+              status: 408,
+              headers: { 'Content-Type': 'text/plain' }
+            });
           });
       })
   );

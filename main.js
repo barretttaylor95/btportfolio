@@ -1,27 +1,51 @@
 // Fix import section - define import variables but handle missing modules gracefully
 let javaTerminal, apiDemo, databaseViewer, gitViewer, buildTools, projectDemo, ideTools, codeChallenge;
 
-// Safely import modules
-try {
-    // Import modules with dynamic import to handle failures gracefully
-    Promise.all([
-        import('./features/java-terminal.js'),
-        import('./features/api-demo.js'),
-        import('./features/db-viewer.js'),
-        import('./features/git-viewer.js'),
-        import('./features/build-tools.js'),
-        import('./features/project-demo.js'),
-        import('./features/ide-tools.js'),
-        import('./features/code-challenge.js')
-    ]).then(modules => {
-        [javaTerminal, apiDemo, databaseViewer, gitViewer, buildTools, projectDemo, ideTools, codeChallenge] =
-            modules.map(m => m.default);
-        console.log("All modules loaded successfully");
-    }).catch(error => {
-        console.warn("Some modules failed to load:", error);
-    });
-} catch (e) {
-    console.warn("Error loading modules:", e);
+// Safely import modules with proper error handling
+document.addEventListener('DOMContentLoaded', function() {
+    // First, make sure we have the terminal panel
+    createTerminalPanel();
+
+    // Then try to import modules
+    try {
+        // In browser environments, we need to use dynamic imports
+        Promise.all([
+            import('./features/java-terminal.js').catch(() => ({ default: createFallbackModule('Java Terminal') })),
+            import('./features/api-demo.js').catch(() => ({ default: createFallbackModule('API Demo') })),
+            import('./features/db-viewer.js').catch(() => ({ default: createFallbackModule('Database Viewer') })),
+            import('./features/git-viewer.js').catch(() => ({ default: createFallbackModule('Git Viewer') })),
+            import('./features/build-tools.js').catch(() => ({ default: createFallbackModule('Build Tools') })),
+            import('./features/project-demo.js').catch(() => ({ default: createFallbackModule('Project Demo') })),
+            import('./features/ide-tools.js').catch(() => ({ default: createFallbackModule('IDE Tools') })),
+            import('./features/code-challenge.js').catch(() => ({ default: createFallbackModule('Code Challenge') }))
+        ]).then(modules => {
+            // Assign each module to its variable
+            [javaTerminal, apiDemo, databaseViewer, gitViewer, buildTools, projectDemo, ideTools, codeChallenge] =
+                modules.map(m => m.default);
+            console.log("All modules loaded successfully");
+
+            // Initialize after loading
+            initializePortfolio();
+        }).catch(error => {
+            console.warn("Some modules failed to load:", error);
+            // Initialize anyway with fallbacks
+            initializePortfolio();
+        });
+    } catch (e) {
+        console.warn("Error loading modules:", e);
+        initializePortfolio();
+    }
+});
+
+// Create fallback module for features that fail to load
+function createFallbackModule(featureName) {
+    return {
+        start: function(terminal) {
+            displayModuleErrorMessage(featureName + ' module', terminal);
+        },
+        processInput: function() { return false; },
+        isActive: function() { return false; }
+    };
 }
 
 // Global variables for panel sizes
@@ -58,32 +82,51 @@ function safeLocalStorage(action, key, value) {
     }
 }
 
-// Font loading handler
-document.fonts.ready.then(function() {
-    console.log('Fonts loaded successfully');
-}).catch(function(error) {
-    console.warn('Font loading issue:', error);
-    // Add fallback fonts if needed
-    document.body.style.fontFamily = "'JetBrains Mono', Consolas, 'Courier New', monospace";
-});
-
 // Create the terminal panel if it doesn't exist
 function createTerminalPanel() {
     const contentArea = document.querySelector('.content-area');
-    if (!contentArea) return;
+    if (!contentArea) {
+        console.error('Content area not found, cannot create terminal panel');
+        return;
+    }
 
     // Check if terminal panel already exists
-    if (document.getElementById('terminalPanel')) return;
+    if (document.getElementById('terminalPanel')) {
+        console.log('Terminal panel already exists');
+        return;
+    }
+
+    console.log('Creating terminal panel');
 
     // Create the terminal panel
     const terminalPanel = document.createElement('div');
     terminalPanel.className = 'terminal-panel';
     terminalPanel.id = 'terminalPanel';
 
+    // Set initial style to ensure visibility
+    terminalPanel.style.position = 'absolute';
+    terminalPanel.style.left = '0';
+    terminalPanel.style.right = '0';
+    terminalPanel.style.bottom = '25px'; // Leave room for status bar
+    terminalPanel.style.height = '200px';
+    terminalPanel.style.minHeight = '100px';
+    terminalPanel.style.zIndex = '3';
+    terminalPanel.style.display = 'flex';
+    terminalPanel.style.flexDirection = 'column';
+    terminalPanel.style.backgroundColor = '#1e1e1e';
+    terminalPanel.style.borderTop = '1px solid #323232';
+
     // Create resize handle for terminal
     const terminalResizeHandle = document.createElement('div');
     terminalResizeHandle.className = 'resize-handle vertical-resize-handle';
     terminalResizeHandle.id = 'terminalResizeHandle';
+    terminalResizeHandle.style.position = 'absolute';
+    terminalResizeHandle.style.cursor = 'row-resize';
+    terminalResizeHandle.style.height = '5px';
+    terminalResizeHandle.style.left = '0';
+    terminalResizeHandle.style.right = '0';
+    terminalResizeHandle.style.top = '0';
+    terminalResizeHandle.style.zIndex = '50';
     terminalPanel.appendChild(terminalResizeHandle);
 
     // Create terminal header
@@ -127,6 +170,86 @@ function createTerminalPanel() {
 
     // Add terminal panel to content area
     contentArea.appendChild(terminalPanel);
+
+    console.log('Terminal panel created successfully');
+
+    // Adjust the editor area to make room for terminal
+    const editorArea = document.getElementById('editorArea');
+    if (editorArea) {
+        editorArea.style.bottom = (terminalHeight + 25) + 'px'; // terminal height + status bar
+    }
+}
+
+// Initialize the portfolio
+function initializePortfolio() {
+    console.log('Initializing portfolio');
+
+    // Initialize resizable panels
+    initResizablePanels();
+
+    // Check for theme preference
+    const storedTheme = safeLocalStorage('get', 'theme');
+    if (storedTheme) {
+        isDarkMode = storedTheme === 'dark';
+        if (!isDarkMode) {
+            document.body.classList.remove('dark-mode');
+            document.body.classList.add('light-mode');
+        }
+    }
+
+    // Set up theme toggle button if it exists
+    const themeToggleBtn = document.querySelector('.action-button');
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', toggleTheme);
+    }
+
+    // Expand the root folder by default
+    const rootFolder = document.querySelector('.tree-item');
+    if (rootFolder) {
+        toggleFolder(rootFolder);
+    }
+
+    // Check if there's a hash in the URL and show that section
+    const hash = window.location.hash;
+    if (hash && hash.length > 1) {
+        const section = hash.substring(1);
+        showSection(section);
+    } else {
+        // Otherwise, try to load from localStorage or default to 'about'
+        const savedTab = safeLocalStorage('get', 'activeTab');
+        showSection(savedTab || 'about');
+    }
+
+    // Setup terminal command handler for editor links
+    setupTerminalCommandHandler();
+
+    // Set up interactive terminal
+    setupInteractiveTerminal();
+
+    // Setup tab close buttons
+    document.querySelectorAll('.close-tab').forEach(closeBtn => {
+        closeBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const tab = this.closest('.editor-tab');
+            if (tab) {
+                tab.style.display = 'none';
+                if (tab.classList.contains('active')) {
+                    showSection('about');
+                }
+            }
+        });
+    });
+
+    // Apply syntax highlighting
+    applySyntaxHighlighting();
+
+    // Hide loading overlay if it exists
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) {
+        loadingOverlay.style.display = 'none';
+    }
+
+    console.log('Portfolio initialization complete');
 }
 
 // Show the active section content and tab
@@ -171,150 +294,7 @@ function showSection(section) {
             }
         }
     } catch (error) {
-        console.error('Error navigating command history:', error);
-    }
-}
-
-// Setup terminal command handler for links in the editor
-function setupTerminalCommandHandler() {
-    // Make sure we don't define it twice
-    if (!window.terminalProcessCommand) {
-        window.terminalProcessCommand = function(command) {
-            const terminal = document.querySelector('.terminal-content');
-            if (!terminal) return;
-
-            // Find the input element
-            const inputElement = terminal.querySelector('.terminal-prompt:last-child .terminal-input');
-            if (!inputElement) return;
-
-            // Set the command text
-            inputElement.textContent = command;
-
-            // Create and dispatch an Enter key event
-            const event = new KeyboardEvent('keydown', {
-                key: 'Enter',
-                code: 'Enter',
-                keyCode: 13,
-                which: 13,
-                bubbles: true,
-                cancelable: true
-            });
-
-            inputElement.dispatchEvent(event);
-        };
-    }
-}
-
-// Apply syntax highlighting to code blocks
-function applySyntaxHighlighting() {
-    document.querySelectorAll('pre code').forEach(block => {
-        // Get the language class
-        const langMatch = block.className.match(/language-(\w+)/);
-        if (langMatch) {
-            const lang = langMatch[1];
-
-            // Simple syntax highlighting based on patterns
-            let html = block.innerHTML;
-
-            // Comments
-            html = html.replace(/\/\/.*$/gm, match => `<span class="comment">${match}</span>`);
-            html = html.replace(/\/\*[\s\S]*?\*\//g, match => `<span class="comment">${match}</span>`);
-            html = html.replace(/#.*$/gm, match => `<span class="comment">${match}</span>`);
-
-            // Strings
-            html = html.replace(/"([^"]*)"/g, (match, p1) => `"<span class="string">${p1}</span>"`);
-            html = html.replace(/'([^']*)'/g, (match, p1) => `'<span class="string">${p1}</span>'`);
-
-            // Keywords
-            const keywords = {
-                java: ['public', 'class', 'private', 'protected', 'final', 'static', 'void', 'import', 'package', 'return', 'new', 'this', 'if', 'else', 'for', 'while', 'try', 'catch'],
-                javascript: ['const', 'let', 'var', 'function', 'return', 'if', 'else', 'for', 'while', 'try', 'catch', 'await', 'async', 'import', 'export', 'default', 'from', 'class', 'this'],
-                python: ['def', 'import', 'from', 'class', 'if', 'else', 'elif', 'for', 'while', 'try', 'except', 'return', 'with', 'as', 'in', 'not', 'and', 'or', 'self']
-            };
-
-            if (keywords[lang]) {
-                keywords[lang].forEach(keyword => {
-                    const re = new RegExp(`\\b${keyword}\\b`, 'g');
-                    html = html.replace(re, `<span class="keyword">${keyword}</span>`);
-                });
-            }
-
-            block.innerHTML = html;
-        }
-    });
-}
-
-// Initialize on document load
-document.addEventListener('DOMContentLoaded', function() {
-    try {
-        // Initialize resizable panels
-        initResizablePanels();
-
-        // Check for theme preference
-        const storedTheme = safeLocalStorage('get', 'theme');
-        if (storedTheme) {
-            isDarkMode = storedTheme === 'dark';
-            if (!isDarkMode) {
-                document.body.classList.remove('dark-mode');
-                document.body.classList.add('light-mode');
-            }
-        }
-
-        // Set up theme toggle button if it exists
-        const themeToggleBtn = document.querySelector('.action-button');
-        if (themeToggleBtn) {
-            themeToggleBtn.addEventListener('click', toggleTheme);
-        }
-
-        // Expand the root folder by default
-        const rootFolder = document.querySelector('.tree-item');
-        if (rootFolder) {
-            toggleFolder(rootFolder);
-        }
-
-        // Check if there's a hash in the URL and show that section
-        const hash = window.location.hash;
-        if (hash && hash.length > 1) {
-            const section = hash.substring(1);
-            showSection(section);
-        } else {
-            // Otherwise, try to load from localStorage or default to 'about'
-            const savedTab = safeLocalStorage('get', 'activeTab');
-            showSection(savedTab || 'about');
-        }
-
-        // Setup terminal command handler for editor links
-        setupTerminalCommandHandler();
-
-        // Set up interactive terminal
-        setupInteractiveTerminal();
-
-        // Setup tab close buttons
-        document.querySelectorAll('.close-tab').forEach(closeBtn => {
-            closeBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const tab = this.closest('.editor-tab');
-                if (tab) {
-                    tab.style.display = 'none';
-                    if (tab.classList.contains('active')) {
-                        showSection('about');
-                    }
-                }
-            });
-        });
-
-        // Apply syntax highlighting
-        applySyntaxHighlighting();
-
-        // Hide loading overlay if it exists
-        const loadingOverlay = document.getElementById('loadingOverlay');
-        if (loadingOverlay) {
-            loadingOverlay.style.display = 'none';
-        }
-    } catch (error) {
-        console.error('Error initializing application:', error);
-    }
-});.error('Error showing section:', error);
+        console.error('Error showing section:', error);
         // Default to a visible state if error occurs
         document.querySelectorAll('.code-content')[0]?.classList.add('active');
     }
@@ -432,7 +412,7 @@ function toggleTheme() {
 
 // Initialize the resizable panels
 function initResizablePanels() {
-    // Create terminal panel if it doesn't exist
+    // Ensure terminal panel exists
     createTerminalPanel();
 
     const directoryHandle = document.getElementById('directoryResizeHandle');
@@ -464,6 +444,8 @@ function initResizablePanels() {
             startX = e.clientX;
             document.body.style.cursor = 'col-resize';
         });
+    } else {
+        console.warn('Directory resize handle not found');
     }
 
     // Terminal resize handle events
@@ -473,7 +455,10 @@ function initResizablePanels() {
             isDraggingTerminalHandle = true;
             startY = e.clientY;
             document.body.style.cursor = 'row-resize';
+            console.log('Terminal resize started');
         });
+    } else {
+        console.warn('Terminal resize handle not found');
     }
 
     // Mouse move event for both handles
@@ -492,16 +477,20 @@ function initResizablePanels() {
         }
 
         if (isDraggingTerminalHandle) {
-            const deltaY = startY - e.clientY;
-            terminalHeight += deltaY;
-            startY = e.clientY;
+            // Calculate height from bottom of window to cursor position
+            // We need to invert the calculation as we're dragging from top of terminal
+            const editorBottom = window.innerHeight - 25; // 25px for status bar
+            const newTerminalHeight = editorBottom - e.clientY;
 
-            // Constrain to minimum and maximum heights
-            terminalHeight = Math.max(100, Math.min(window.innerHeight - 200, terminalHeight));
-            updatePanelSizes();
+            // Only update if it's a reasonable size
+            if (newTerminalHeight > 100 && newTerminalHeight < window.innerHeight - 200) {
+                terminalHeight = newTerminalHeight;
+                updatePanelSizes();
 
-            // Save to localStorage
-            safeLocalStorage('set', 'terminalHeight', terminalHeight.toString());
+                // Save to localStorage
+                safeLocalStorage('set', 'terminalHeight', terminalHeight.toString());
+                console.log('Terminal height updated to', terminalHeight);
+            }
         }
     });
 
@@ -511,6 +500,7 @@ function initResizablePanels() {
             isDraggingDirectoryHandle = false;
             isDraggingTerminalHandle = false;
             document.body.style.cursor = 'default';
+            console.log('Resize operation ended');
         }
     });
 
@@ -528,8 +518,19 @@ function updatePanelSizes() {
     const projectDirectory = document.getElementById('projectDirectory');
     const editorArea = document.getElementById('editorArea');
     const terminalPanel = document.getElementById('terminalPanel');
+    const statusBar = document.querySelector('.status-bar');
 
-    if (projectDirectory && editorArea && terminalPanel) {
+    if (!projectDirectory || !editorArea || !terminalPanel) {
+        console.error('Missing critical elements for resizing');
+        console.log({
+            projectDirectory: !!projectDirectory,
+            editorArea: !!editorArea,
+            terminalPanel: !!terminalPanel
+        });
+        return;
+    }
+
+    try {
         // Update directory width
         projectDirectory.style.width = `${directoryWidth}px`;
 
@@ -537,17 +538,100 @@ function updatePanelSizes() {
         editorArea.style.left = `${directoryWidth}px`;
         editorArea.style.width = `calc(100% - ${directoryWidth}px)`;
 
-        // Update terminal height and position
+        // Position the terminal panel properly
         terminalPanel.style.height = `${terminalHeight}px`;
 
         // Update editor height to account for terminal
-        editorArea.style.bottom = `${terminalHeight}px`;
+        editorArea.style.bottom = `${terminalHeight + 25}px`; // Add status bar height
+
+        console.log('Panel sizes updated', {
+            directoryWidth,
+            terminalHeight,
+            editorBottom: editorArea.style.bottom
+        });
+    } catch (error) {
+        console.error('Error updating panel sizes:', error);
     }
+}
+
+// Setup terminal command handler for links in the editor
+function setupTerminalCommandHandler() {
+    // Make sure we don't define it twice
+    if (!window.terminalProcessCommand) {
+        window.terminalProcessCommand = function(command) {
+            const terminal = document.querySelector('.terminal-content');
+            if (!terminal) {
+                console.error('Terminal content not found');
+                return;
+            }
+
+            // Find the input element
+            const inputElement = terminal.querySelector('.terminal-prompt:last-child .terminal-input');
+            if (!inputElement) {
+                console.error('Terminal input not found');
+                return;
+            }
+
+            // Set the command text
+            inputElement.textContent = command;
+
+            // Create and dispatch an Enter key event
+            const event = new KeyboardEvent('keydown', {
+                key: 'Enter',
+                code: 'Enter',
+                keyCode: 13,
+                which: 13,
+                bubbles: true,
+                cancelable: true
+            });
+
+            inputElement.dispatchEvent(event);
+        };
+    }
+}
+
+// Apply syntax highlighting to code blocks
+function applySyntaxHighlighting() {
+    document.querySelectorAll('pre code').forEach(block => {
+        // Get the language class
+        const langMatch = block.className.match(/language-(\w+)/);
+        if (langMatch) {
+            const lang = langMatch[1];
+
+            // Simple syntax highlighting based on patterns
+            let html = block.innerHTML;
+
+            // Comments
+            html = html.replace(/\/\/.*$/gm, match => `<span class="comment">${match}</span>`);
+            html = html.replace(/\/\*[\s\S]*?\*\//g, match => `<span class="comment">${match}</span>`);
+            html = html.replace(/#.*$/gm, match => `<span class="comment">${match}</span>`);
+
+            // Strings
+            html = html.replace(/"([^"]*)"/g, (match, p1) => `"<span class="string">${p1}</span>"`);
+            html = html.replace(/'([^']*)'/g, (match, p1) => `'<span class="string">${p1}</span>'`);
+
+            // Keywords
+            const keywords = {
+                java: ['public', 'class', 'private', 'protected', 'final', 'static', 'void', 'import', 'package', 'return', 'new', 'this', 'if', 'else', 'for', 'while', 'try', 'catch'],
+                javascript: ['const', 'let', 'var', 'function', 'return', 'if', 'else', 'for', 'while', 'try', 'catch', 'await', 'async', 'import', 'export', 'default', 'from', 'class', 'this'],
+                python: ['def', 'import', 'from', 'class', 'if', 'else', 'elif', 'for', 'while', 'try', 'except', 'return', 'with', 'as', 'in', 'not', 'and', 'or', 'self']
+            };
+
+            if (keywords[lang]) {
+                keywords[lang].forEach(keyword => {
+                    const re = new RegExp(`\\b${keyword}\\b`, 'g');
+                    html = html.replace(re, `<span class="keyword">${keyword}</span>`);
+                });
+            }
+
+            block.innerHTML = html;
+        }
+    });
 }
 
 // Advanced feature command handlers
 function enterJavaMode() {
-    if (javaTerminal) {
+    if (javaTerminal && typeof javaTerminal.start === 'function') {
         javaTerminal.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
     } else {
         displayModuleErrorMessage('Java Terminal module', document.querySelector('.terminal-content'));
@@ -555,7 +639,7 @@ function enterJavaMode() {
 }
 
 function showApiDemo() {
-    if (apiDemo) {
+    if (apiDemo && typeof apiDemo.start === 'function') {
         apiDemo.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
     } else {
         displayModuleErrorMessage('API Demo module', document.querySelector('.terminal-content'));
@@ -563,7 +647,7 @@ function showApiDemo() {
 }
 
 function showDatabaseViewer() {
-    if (databaseViewer) {
+    if (databaseViewer && typeof databaseViewer.start === 'function') {
         databaseViewer.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
     } else {
         displayModuleErrorMessage('Database Viewer module', document.querySelector('.terminal-content'));
@@ -571,7 +655,7 @@ function showDatabaseViewer() {
 }
 
 function showGitViewer() {
-    if (gitViewer) {
+    if (gitViewer && typeof gitViewer.start === 'function') {
         gitViewer.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
     } else {
         displayModuleErrorMessage('Git Viewer module', document.querySelector('.terminal-content'));
@@ -579,7 +663,7 @@ function showGitViewer() {
 }
 
 function showBuildTools() {
-    if (buildTools) {
+    if (buildTools && typeof buildTools.start === 'function') {
         buildTools.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
     } else {
         displayModuleErrorMessage('Build Tools module', document.querySelector('.terminal-content'));
@@ -587,7 +671,7 @@ function showBuildTools() {
 }
 
 function showProjectDemo() {
-    if (projectDemo) {
+    if (projectDemo && typeof projectDemo.start === 'function') {
         projectDemo.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
     } else {
         displayModuleErrorMessage('Project Demo module', document.querySelector('.terminal-content'));
@@ -595,7 +679,7 @@ function showProjectDemo() {
 }
 
 function showDevelopmentTools() {
-    if (ideTools) {
+    if (ideTools && typeof ideTools.start === 'function') {
         ideTools.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
     } else {
         displayModuleErrorMessage('IDE Tools module', document.querySelector('.terminal-content'));
@@ -603,7 +687,7 @@ function showDevelopmentTools() {
 }
 
 function startCodingChallenge() {
-    if (codeChallenge) {
+    if (codeChallenge && typeof codeChallenge.start === 'function') {
         codeChallenge.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
     } else {
         displayModuleErrorMessage('Code Challenge module', document.querySelector('.terminal-content'));
@@ -612,7 +696,10 @@ function startCodingChallenge() {
 
 // Display error message for missing modules
 function displayModuleErrorMessage(moduleName, terminal) {
-    if (!terminal) return;
+    if (!terminal) {
+        console.error('Terminal not found for error message');
+        return;
+    }
 
     const output = document.createElement('div');
     output.className = 'terminal-output';
@@ -632,25 +719,31 @@ function displayModuleErrorMessage(moduleName, terminal) {
 function processTerminalCommand(command) {
     try {
         const terminal = document.querySelector('.terminal-content');
-        if (!terminal) return;
+        if (!terminal) {
+            console.error('Terminal content not found for command processing');
+            return;
+        }
+
+        // Ensure the command is trimmed
+        const trimmedCommand = command.trim();
 
         // Check if any advanced mode is active
-        if (javaTerminal && javaTerminal.isActive()) {
-            return javaTerminal.processInput(command, terminal, document.getElementById('editorArea'));
-        } else if (apiDemo && apiDemo.isActive()) {
-            return apiDemo.processInput(command, terminal, document.getElementById('editorArea'));
-        } else if (databaseViewer && databaseViewer.isActive()) {
-            return databaseViewer.processInput(command, terminal, document.getElementById('editorArea'));
-        } else if (gitViewer && gitViewer.isActive()) {
-            return gitViewer.processInput(command, terminal, document.getElementById('editorArea'));
-        } else if (buildTools && buildTools.isActive()) {
-            return buildTools.processInput(command, terminal, document.getElementById('editorArea'));
-        } else if (projectDemo && projectDemo.isActive()) {
-            return projectDemo.processInput(command, terminal, document.getElementById('editorArea'));
-        } else if (ideTools && ideTools.isActive()) {
-            return ideTools.processInput(command, terminal, document.getElementById('editorArea'));
-        } else if (codeChallenge && codeChallenge.isActive()) {
-            return codeChallenge.processInput(command, terminal, document.getElementById('editorArea'));
+        if (javaTerminal && typeof javaTerminal.isActive === 'function' && javaTerminal.isActive()) {
+            return javaTerminal.processInput(trimmedCommand, terminal, document.getElementById('editorArea'));
+        } else if (apiDemo && typeof apiDemo.isActive === 'function' && apiDemo.isActive()) {
+            return apiDemo.processInput(trimmedCommand, terminal, document.getElementById('editorArea'));
+        } else if (databaseViewer && typeof databaseViewer.isActive === 'function' && databaseViewer.isActive()) {
+            return databaseViewer.processInput(trimmedCommand, terminal, document.getElementById('editorArea'));
+        } else if (gitViewer && typeof gitViewer.isActive === 'function' && gitViewer.isActive()) {
+            return gitViewer.processInput(trimmedCommand, terminal, document.getElementById('editorArea'));
+        } else if (buildTools && typeof buildTools.isActive === 'function' && buildTools.isActive()) {
+            return buildTools.processInput(trimmedCommand, terminal, document.getElementById('editorArea'));
+        } else if (projectDemo && typeof projectDemo.isActive === 'function' && projectDemo.isActive()) {
+            return projectDemo.processInput(trimmedCommand, terminal, document.getElementById('editorArea'));
+        } else if (ideTools && typeof ideTools.isActive === 'function' && ideTools.isActive()) {
+            return ideTools.processInput(trimmedCommand, terminal, document.getElementById('editorArea'));
+        } else if (codeChallenge && typeof codeChallenge.isActive === 'function' && codeChallenge.isActive()) {
+            return codeChallenge.processInput(trimmedCommand, terminal, document.getElementById('editorArea'));
         }
 
         const output = document.createElement('div');
@@ -669,13 +762,13 @@ function processTerminalCommand(command) {
         };
 
         // Process different commands
-        if (advancedCommands[command.toLowerCase().trim()]) {
+        if (advancedCommands[trimmedCommand.toLowerCase()]) {
             // Handle advanced mode commands
-            advancedCommands[command.toLowerCase().trim()]();
+            advancedCommands[trimmedCommand.toLowerCase()]();
             return;
         }
 
-        switch (command.toLowerCase().trim()) {
+        switch (trimmedCommand.toLowerCase()) {
             case 'help':
                 output.innerHTML = `
 Available commands:
@@ -871,113 +964,118 @@ function promptMessage(terminal) {
 function setupInteractiveTerminal() {
     try {
         const terminal = document.querySelector('.terminal-content');
-        if (!terminal) return;
-
-        // Remove typing cursor simulation for interactive terminal if it exists
-        const typingCursor = terminal.querySelector('.typing-cursor');
-        if (typingCursor) {
-            typingCursor.style.display = 'inline-block';
+        if (!terminal) {
+            console.error('Terminal content not found for setup');
+            return;
         }
 
-        // Create input field
+        // Find the input field
         const lastPrompt = terminal.querySelector('.terminal-prompt:last-child');
-        if (lastPrompt) {
-            const terminalInput = lastPrompt.querySelector('.terminal-input');
-            if (terminalInput) {
-                // Focus on click anywhere in the terminal
-                terminal.addEventListener('click', function(e) {
-                    // But only if we're not clicking on another interactive element
-                    if (!e.target.closest('a, button, [contenteditable], textarea')) {
-                        terminalInput.focus();
-                    }
-                });
-
-                // Handle keyboard input
-                terminalInput.addEventListener('keydown', function(e) {
-                    // Command history navigation
-                    if (e.key === 'ArrowUp') {
-                        e.preventDefault();
-                        navigateCommandHistory('up', this);
-                        return;
-                    }
-
-                    if (e.key === 'ArrowDown') {
-                        e.preventDefault();
-                        navigateCommandHistory('down', this);
-                        return;
-                    }
-
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-
-                        // Get command
-                        const command = this.textContent.trim();
-
-                        // Save command to currentTerminalInput and history
-                        currentTerminalInput = command;
-
-                        // Add to command history if not empty
-                        if (command && (commandHistory.length === 0 || commandHistory[0] !== command)) {
-                            commandHistory.unshift(command);
-                            // Reset history index
-                            historyIndex = -1;
-
-                            // Save to localStorage
-                            try {
-                                safeLocalStorage('set', 'terminalCommandHistory', JSON.stringify(commandHistory.slice(0, 20)));
-                            } catch (err) {
-                                console.warn('Error saving command history:', err);
-                            }
-                        }
-
-                        // Clear input
-                        this.textContent = '';
-
-                        // Clone current prompt
-                        const newPrompt = lastPrompt.cloneNode(true);
-                        const newInput = newPrompt.querySelector('.terminal-input');
-                        if (newInput) {
-                            newInput.textContent = '';
-                            newInput.setAttribute('contenteditable', 'true');
-                            newInput.setAttribute('spellcheck', 'false');
-
-                            // Setup keyboard event for new input
-                            newInput.addEventListener('keydown', arguments.callee);
-                        }
-
-                        // Replace current prompt with non-editable version showing command
-                        lastPrompt.querySelector('.terminal-input').textContent = command;
-                        lastPrompt.querySelector('.terminal-input').removeAttribute('contenteditable');
-
-                        // Remove cursor from current prompt
-                        const oldCursor = lastPrompt.querySelector('.typing-cursor');
-                        if (oldCursor) oldCursor.remove();
-
-                        // Process command
-                        processTerminalCommand(command);
-
-                        // Add new prompt
-                        terminal.appendChild(newPrompt);
-
-                        // Focus new input
-                        newInput.focus();
-
-                        // Scroll to bottom
-                        terminal.scrollTop = terminal.scrollHeight;
-                    }
-                });
-
-                // Load command history from localStorage
-                try {
-                    const savedHistory = safeLocalStorage('parse', 'terminalCommandHistory');
-                    if (savedHistory && Array.isArray(savedHistory)) {
-                        commandHistory = savedHistory;
-                    }
-                } catch (err) {
-                    console.warn('Error loading command history:', err);
-                }
-            }
+        if (!lastPrompt) {
+            console.error('Terminal prompt not found');
+            return;
         }
+
+        const terminalInput = lastPrompt.querySelector('.terminal-input');
+        if (!terminalInput) {
+            console.error('Terminal input not found');
+            return;
+        }
+
+        // Focus on click anywhere in the terminal
+        terminal.addEventListener('click', function(e) {
+            // But only if we're not clicking on another interactive element
+            if (!e.target.closest('a, button, [contenteditable], textarea')) {
+                terminalInput.focus();
+            }
+        });
+
+        // Handle keyboard input
+        terminalInput.addEventListener('keydown', function(e) {
+            // Command history navigation
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                navigateCommandHistory('up', this);
+                return;
+            }
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                navigateCommandHistory('down', this);
+                return;
+            }
+
+            if (e.key === 'Enter') {
+                e.preventDefault();
+
+                // Get command
+                const command = this.textContent.trim();
+
+                // Save command to currentTerminalInput and history
+                currentTerminalInput = command;
+
+                // Add to command history if not empty
+                if (command && (commandHistory.length === 0 || commandHistory[0] !== command)) {
+                    commandHistory.unshift(command);
+                    // Reset history index
+                    historyIndex = -1;
+
+                    // Save to localStorage
+                    try {
+                        safeLocalStorage('set', 'terminalCommandHistory', JSON.stringify(commandHistory.slice(0, 20)));
+                    } catch (err) {
+                        console.warn('Error saving command history:', err);
+                    }
+                }
+
+                // Clear input
+                this.textContent = '';
+
+                // Clone current prompt
+                const newPrompt = lastPrompt.cloneNode(true);
+                const newInput = newPrompt.querySelector('.terminal-input');
+                if (newInput) {
+                    newInput.textContent = '';
+                    newInput.setAttribute('contenteditable', 'true');
+                    newInput.setAttribute('spellcheck', 'false');
+
+                    // Setup keyboard event for new input
+                    newInput.addEventListener('keydown', arguments.callee);
+                }
+
+                // Replace current prompt with non-editable version showing command
+                lastPrompt.querySelector('.terminal-input').textContent = command;
+                lastPrompt.querySelector('.terminal-input').removeAttribute('contenteditable');
+
+                // Remove cursor from current prompt
+                const oldCursor = lastPrompt.querySelector('.typing-cursor');
+                if (oldCursor) oldCursor.remove();
+
+                // Process command
+                processTerminalCommand(command);
+
+                // Add new prompt
+                terminal.appendChild(newPrompt);
+
+                // Focus new input
+                newInput.focus();
+
+                // Scroll to bottom
+                terminal.scrollTop = terminal.scrollHeight;
+            }
+        });
+
+        // Load command history from localStorage
+        try {
+            const savedHistory = safeLocalStorage('parse', 'terminalCommandHistory');
+            if (savedHistory && Array.isArray(savedHistory)) {
+                commandHistory = savedHistory;
+            }
+        } catch (err) {
+            console.warn('Error loading command history:', err);
+        }
+
+        console.log('Interactive terminal setup complete');
     } catch (error) {
         console.error('Error setting up interactive terminal:', error);
     }
@@ -1021,4 +1119,6 @@ function navigateCommandHistory(direction, inputElement) {
             }
         }
     } catch (error) {
-        console
+        console.error('Error navigating command history:', error);
+    }
+}

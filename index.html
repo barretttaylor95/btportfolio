@@ -753,5 +753,92 @@ const primaryGuitars = [
 
 <!-- Include JavaScript files -->
 <script src="main.js"></script>
+// Add this script tag just before the closing body tag in index.html
+// This ensures that window.toggleFolder is available for the HTML onclick attributes
+
+<script>
+    // Temporary script to ensure toggleFolder is available globally
+    // This will be replaced by the main.js implementation
+    window.toggleFolder = function(element) {
+      const nestedFiles = element.nextElementSibling;
+      const icon = element.querySelector('.fa-chevron-right');
+
+      if (nestedFiles && nestedFiles.classList.contains('nested-files')) {
+        const isExpanded = nestedFiles.style.display === 'block';
+        nestedFiles.style.display = isExpanded ? 'none' : 'block';
+
+        if (icon) {
+          icon.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(90deg)';
+        }
+      }
+    };
+</script>
+<script>
+    // Emergency terminal recovery
+    document.addEventListener('DOMContentLoaded', function() {
+      // Give a slight delay to allow other scripts to run first
+      setTimeout(function() {
+        // Check if terminal exists - make sure the condition is correct
+        if (!document.getElementById('terminalPanel')) {
+          console.log('Emergency terminal recovery activated');
+
+          // Create terminal panel
+          const contentArea = document.querySelector('.content-area');
+          if (contentArea) {
+            // Rest of your terminal creation code...
+                // Create terminal panel container
+                const terminalPanel = document.createElement('div');
+                terminalPanel.id = 'terminalPanel';
+                terminalPanel.className = 'terminal-panel';
+                terminalPanel.style.position = 'absolute';
+                terminalPanel.style.left = '0';
+                terminalPanel.style.right = '0';
+                terminalPanel.style.bottom = '25px';
+                terminalPanel.style.height = '200px';
+                terminalPanel.style.backgroundColor = '#1e1e1e';
+                terminalPanel.style.borderTop = '1px solid #323232';
+                terminalPanel.style.display = 'flex';
+                terminalPanel.style.flexDirection = 'column';
+                terminalPanel.style.zIndex = '3';
+
+                // Create terminal content
+                const terminalContent = document.createElement('div');
+                terminalContent.className = 'terminal-content';
+                terminalContent.style.flex = '1';
+                terminalContent.style.backgroundColor = '#1e1e1e';
+                terminalContent.style.padding = '10px';
+                terminalContent.style.fontFamily = "'JetBrains Mono', 'Consolas', monospace";
+                terminalContent.style.color = '#dcdcdc';
+                terminalContent.style.overflowY = 'auto';
+                terminalContent.innerHTML = `
+                  <div class="terminal-output">Recovery mode: Terminal has been restored.</div>
+                  <div class="terminal-output">Type help to see available commands.</div>
+                  <div class="terminal-prompt">
+                    <span class="terminal-user">guest</span><span class="terminal-at">@</span><span class="terminal-machine">portfolio</span><span class="terminal-colon">:</span><span class="terminal-directory">~</span><span class="terminal-symbol">$</span>
+                    <span class="terminal-input" contenteditable="true" spellcheck="false"></span>
+                    <span class="typing-cursor"></span>
+                  </div>
+                `;
+
+                // Add terminal to DOM
+                terminalPanel.appendChild(terminalContent);
+                contentArea.appendChild(terminalPanel);
+
+                // Fix terminal input functionality
+                const terminalInput = terminalContent.querySelector('.terminal-input');
+                if (terminalInput) {
+                  terminalInput.focus();
+                  terminalInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      alert('Terminal is in recovery mode. Refresh the page to restore full functionality.');
+                    }
+                  });
+                }
+              }
+            }
+          }, 1000);
+        });
+</script>
 </body>
 </html>
