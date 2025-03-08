@@ -1,3 +1,20 @@
+// Function to load a script via a traditional script tag
+function loadScript(url, callback) {
+    console.log(`Loading script: ${url}`);
+    const script = document.createElement('script');
+    script.type = 'text/javascript'; // Regular script, not a module
+    script.src = url;
+    script.onload = function() {
+        console.log(`Successfully loaded: ${url}`);
+        callback(null);
+    };
+    script.onerror = function() {
+        console.error(`Failed to load: ${url}`);
+        callback(new Error(`Failed to load script: ${url}`));
+    };
+    document.head.appendChild(script);
+}
+
 // Fix import section - define import variables but handle missing modules gracefully
 let javaTerminal, apiDemo, databaseViewer, gitViewer, buildTools, projectDemo, ideTools, codeChallenge;
 
@@ -6,35 +23,44 @@ document.addEventListener('DOMContentLoaded', function() {
     // First, make sure we have the terminal panel
     createTerminalPanel();
 
-    // Then try to import modules
-    try {
-        // In browser environments, we need to use dynamic imports
-        Promise.all([
-            import('./features/java-terminal.js').catch(() => ({ default: createFallbackModule('Java Terminal') })),
-            import('./features/api-demo.js').catch(() => ({ default: createFallbackModule('API Demo') })),
-            import('./features/db-viewer.js').catch(() => ({ default: createFallbackModule('Database Viewer') })),
-            import('./features/git-viewer.js').catch(() => ({ default: createFallbackModule('Git Viewer') })),
-            import('./features/build-tools.js').catch(() => ({ default: createFallbackModule('Build Tools') })),
-            import('./features/project-demo.js').catch(() => ({ default: createFallbackModule('Project Demo') })),
-            import('./features/ide-tools.js').catch(() => ({ default: createFallbackModule('IDE Tools') })),
-            import('./features/code-challenge.js').catch(() => ({ default: createFallbackModule('Code Challenge') }))
-        ]).then(modules => {
-            // Assign each module to its variable
-            [javaTerminal, apiDemo, databaseViewer, gitViewer, buildTools, projectDemo, ideTools, codeChallenge] =
-                modules.map(m => m.default);
-            console.log("All modules loaded successfully");
+    // Load code challenge script directly
+    loadScript('./features/code-challenge.js', function(err) {
+        if (err) {
+            console.error("Error loading code-challenge.js:", err);
+        } else {
+            console.log("Code challenge script loaded successfully");
+        }
 
-            // Initialize after loading
+        // Then try to import other modules
+        try {
+            // In browser environments, we need to use dynamic imports
+            Promise.all([
+                import('./features/java-terminal.js').catch(() => ({ default: createFallbackModule('Java Terminal') })),
+                import('./features/api-demo.js').catch(() => ({ default: createFallbackModule('API Demo') })),
+                import('./features/db-viewer.js').catch(() => ({ default: createFallbackModule('Database Viewer') })),
+                import('./features/git-viewer.js').catch(() => ({ default: createFallbackModule('Git Viewer') })),
+                import('./features/build-tools.js').catch(() => ({ default: createFallbackModule('Build Tools') })),
+                import('./features/project-demo.js').catch(() => ({ default: createFallbackModule('Project Demo') })),
+                import('./features/ide-tools.js').catch(() => ({ default: createFallbackModule('IDE Tools') }))
+                // Skip code-challenge.js since we loaded it directly
+            ]).then(modules => {
+                // Assign each module to its variable
+                [javaTerminal, apiDemo, databaseViewer, gitViewer, buildTools, projectDemo, ideTools] =
+                    modules.map(m => m.default);
+                console.log("All modules loaded successfully");
+
+                // Initialize after loading
+                initializePortfolio();
+            }).catch(error => {
+                console.warn("Some modules failed to load:", error);
+                // Initialize anyway with fallbacks
+                initializePortfolio();
+            });
+        } catch (e) {
+            console.warn("Error loading modules:", e);
             initializePortfolio();
-        }).catch(error => {
-            console.warn("Some modules failed to load:", error);
-            // Initialize anyway with fallbacks
-            initializePortfolio();
-        });
-    } catch (e) {
-        console.warn("Error loading modules:", e);
-        initializePortfolio();
-    }
+        }
+    });
 });
 
 // Create fallback module for features that fail to load
@@ -629,6 +655,35 @@ function applySyntaxHighlighting() {
     });
 }
 
+// Start code challenge feature
+function startCodingChallenge() {
+    console.log("Starting coding challenge feature");
+
+    // First check if we have the non-module version available
+    if (window.codeChallengePlaceholder && typeof window.codeChallengePlaceholder.start === 'function') {
+        console.log("Using globally available code challenge module");
+        window.codeChallengePlaceholder.start(
+            document.querySelector('.terminal-content'),
+            document.getElementById('editorArea')
+        );
+        return;
+    }
+
+    // Fall back to the ES module version if available
+    if (codeChallenge && typeof codeChallenge.start === 'function') {
+        console.log("Using ES module code challenge");
+        codeChallenge.start(
+            document.querySelector('.terminal-content'),
+            document.getElementById('editorArea')
+        );
+        return;
+    }
+
+    // Final fallback to error message
+    console.error("No code challenge module available");
+    displayModuleErrorMessage('Code Challenge module', document.querySelector('.terminal-content'));
+}
+
 // Advanced feature command handlers
 function enterJavaMode() {
     if (javaTerminal && typeof javaTerminal.start === 'function') {
@@ -686,14 +741,6 @@ function showDevelopmentTools() {
     }
 }
 
-function startCodingChallenge() {
-    if (codeChallenge && typeof codeChallenge.start === 'function') {
-        codeChallenge.start(document.querySelector('.terminal-content'), document.getElementById('editorArea'));
-    } else {
-        displayModuleErrorMessage('Code Challenge module', document.querySelector('.terminal-content'));
-    }
-}
-
 // Display error message for missing modules
 function displayModuleErrorMessage(moduleName, terminal) {
     if (!terminal) {
@@ -715,7 +762,7 @@ function displayModuleErrorMessage(moduleName, terminal) {
     terminal.scrollTop = terminal.scrollHeight;
 }
 
-// Interactive Terminal Functionality
+// Process terminal commands
 function processTerminalCommand(command) {
     try {
         const terminal = document.querySelector('.terminal-content');
@@ -726,6 +773,18 @@ function processTerminalCommand(command) {
 
         // Ensure the command is trimmed
         const trimmedCommand = command.trim();
+
+        // Check if in challenge mode via the global placeholder
+        if (window.codeChallengePlaceholder &&
+            typeof window.codeChallengePlaceholder.isActive === 'function' &&
+            window.codeChallengePlaceholder.isActive()) {
+
+            return window.codeChallengePlaceholder.processInput(
+                trimmedCommand,
+                terminal,
+                document.getElementById('editorArea')
+            );
+        }
 
         // Check if any advanced mode is active
         if (javaTerminal && typeof javaTerminal.isActive === 'function' && javaTerminal.isActive()) {
@@ -742,8 +801,6 @@ function processTerminalCommand(command) {
             return projectDemo.processInput(trimmedCommand, terminal, document.getElementById('editorArea'));
         } else if (ideTools && typeof ideTools.isActive === 'function' && ideTools.isActive()) {
             return ideTools.processInput(trimmedCommand, terminal, document.getElementById('editorArea'));
-        } else if (codeChallenge && typeof codeChallenge.isActive === 'function' && codeChallenge.isActive()) {
-            return codeChallenge.processInput(trimmedCommand, terminal, document.getElementById('editorArea'));
         }
 
         const output = document.createElement('div');

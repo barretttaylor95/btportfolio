@@ -1,130 +1,86 @@
-# Barrett Taylor Portfolio
-
-An interactive, IDE-inspired portfolio website showcasing my skills, projects, and professional experience as an IT professional and web developer.
+# Barrett Taylor Portfolio Website
 
 ## Overview
+This is an interactive IDE-style portfolio website showcasing Barrett Taylor's skills, projects, and experience as an IT Professional and Web Developer.
 
-This portfolio website emulates the look and feel of a modern integrated development environment (IDE), providing an interactive and engaging way to explore my background, technical skills, and project experience. The interface features resizable panels, an interactive terminal, and code samples that demonstrate my proficiency in various programming languages.
-
-## Latest Updates
-
-The following enhancements have been implemented in the latest version:
-
-### Resizable Panel System
-- **Fluid Panel Resizing**: Implemented a comprehensive resizing system that allows for dynamic adjustment of all three main panels (project directory, code editor, and terminal).
-- **Horizontal Directory Resizing**: Users can now adjust the width of the project directory panel using a draggable handle.
-- **Vertical Terminal Resizing**: Added functionality to resize the terminal panel vertically, providing more space for command output when needed.
-- **Persistent Layout Preferences**: User panel size preferences are now saved in localStorage and restored between sessions.
-
-### HTML Structure Improvements
-- **Code Validation**: Fixed numerous HTML validation issues to ensure cross-browser compatibility.
-- **Proper Tag Structure**: Ensured all tags are properly nested and closed throughout the document.
-- **Semantic Markup**: Enhanced the semantic structure of content sections for better accessibility.
-
-### Interactive Terminal Enhancements
-- **Dynamic Creation**: The terminal panel is now dynamically created via JavaScript for better flexibility.
-- **Command History**: Added support for command history navigation using up/down arrow keys.
-- **Persistent Commands**: Command history is preserved between sessions using localStorage.
-- **Command Execution**: Implemented proper handling of command execution with visual feedback.
-
-### Feature Module System
-- **Module Architecture**: Restructured feature demonstrations using a modular approach with dynamic imports.
-- **Error Resilience**: Added graceful fallback handling for unavailable modules.
-- **Visual Integration**: Features now display properly in both the terminal and editor panels.
+## Recent Updates (March 8, 2025)
+- Added code challenge feature (partial implementation)
+- Modified server.js for better MIME type handling
+- Improved module loading approach for feature modules
+- Enhanced terminal command processing
+- Fixed HTML markup in feature modules
 
 ## Features
 
-- **Interactive File Navigation**: Browse different sections of the portfolio through a familiar file tree structure.
-- **Tabbed Interface**: View different content sections through a tabbed editor interface.
-- **Syntax Highlighting**: Code samples showcase syntax highlighting for various programming languages.
-- **Terminal Interface**: Interact with the portfolio using command-line style inputs.
-- **Responsive Design**: The interface adapts to different screen sizes while maintaining functionality.
-- **Theme Toggle**: Switch between light and dark themes according to preference.
-- **Feature Demonstrations**: Access interactive demonstrations of projects and technical capabilities.
+### Interactive Terminal
+The site features a fully interactive terminal that accepts commands to navigate through the portfolio. Key commands include:
+- `about` - View profile information
+- `skills` - View technical skills
+- `projects` - Browse portfolio projects
+- `experience` - See work history
+- `hobbies` - Learn about interests
+- `contact` - View contact information
+- `help` - See all available commands
+
+### Advanced Interactive Features
+- `java` - Java terminal emulator
+- `api` - API demo interface
+- `database` - Database schema viewer
+- `git` - Git commit history viewer
+- `build` - Build pipeline visualization
+- `demos` - Live project demos
+- `tools` - Development tools showcase
+- `challenge` - Interactive coding challenges (in progress)
+
+### IDE-Style Interface
+The portfolio mimics popular IDEs with:
+- Resizable panels (directory, editor, terminal)
+- Tabbed file navigation
+- Syntax highlighting
+- Dark/light theme toggle
 
 ## Project Structure
-
-- **HTML**: Clean, semantic markup that forms the foundation of the interface.
-- **CSS**: Comprehensive styling that achieves the IDE look and feel.
-- **JavaScript**: Dynamic functionality that powers the interactive elements.
-- **Feature Modules**: Specialized JavaScript modules for advanced demonstrations.
-
-## Usage
-
-### Navigation
-
-- Click on files in the project directory to open different sections in the editor.
-- Use the tabs at the top of the editor to switch between open sections.
-- Resize panels by dragging the handles between them.
-
-### Terminal Commands
-
-The following commands are available in the terminal:
-
-- `about` - View my profile information
-- `skills` - View my technical skills
-- `projects` - Browse my portfolio projects
-- `experience` - See my work history
-- `hobbies` - Learn about my interests
-- `contact` - View my contact information
-- `message` - Send me a message
-- `clear` - Clear the terminal
-
-### Advanced Features
-
-The following advanced features can be accessed through the terminal:
-
-- `java` - Enter Java REPL mode
-- `api` - Launch API demo interface
-- `database` - Open database schema viewer
-- `git` - View Git commit history
-- `build` - Show build pipeline visualization
-- `demos` - Access live project demos
-- `tools` - View development tools showcase
-- `challenge` - Try coding challenges
+- `index.html` - Main HTML document
+- `styles.css` - All styling
+- `main.js` - Core application logic
+- `server.js` - Express server for hosting
+- `features/` - Interactive feature modules
+    - `java-terminal.js`
+    - `api-demo.js`
+    - `db-viewer.js`
+    - `git-viewer.js`
+    - `build-tools.js`
+    - `project-demo.js`
+    - `ide-tools.js`
+    - `code-challenge.js`
 
 ## Technical Implementation
+- Express.js backend
+- Vanilla JavaScript frontend (no frameworks)
+- Responsive design
+- Progressive Web App features
+- Local storage for user preferences
+- Module-based architecture for features
 
-### Resize System
+## Running the Project
+1. Install dependencies: `npm install`
+2. Start development server: `npm run dev`
+3. For production: `npm start`
 
-The resize functionality works through a combination of:
-- DOM elements with special resize-handle classes
-- JavaScript event listeners for mouse interactions
-- CSS positioning and transitions for smooth visual feedback
-- Storage APIs for persisting user preferences
+## Known Issues
+- Code challenge feature has MIME type loading issues
+- Some responsive design improvements needed for very small screens
+- Project demo module might need updates for new project content
 
-### Terminal Creation
+## Next Development Steps
+- Complete code challenge feature implementation
+- Add more interactive demos
+- Enhance mobile responsiveness
+- Improve accessibility features
+- Add unit tests for core functionality
 
-The terminal is dynamically created using JavaScript, which:
-- Constructs the necessary DOM elements
-- Sets up event listeners for user interaction
-- Handles command processing and output
-- Manages the interactive prompt system
+## Credits
+Developed by Barrett Taylor
+Contact: barrett.taylor95@gmail.com
 
-### Feature Module Loading
-
-Features are loaded using dynamic imports with:
-- Asynchronous module loading to prevent blocking
-- Error handling for graceful degradation
-- Modular architecture to isolate functionality
-- Shared interfaces for consistent user experience
-
-## Browser Compatibility
-
-This portfolio has been tested and optimized for:
-- Chrome (latest)
-- Firefox (latest)
-- Safari (latest)
-- Edge (latest)
-
-## Contact
-
-Feel free to reach out through any of these channels:
-
-- Email: barrett.taylor95@gmail.com
-- GitHub: github.com/barretttaylor95
-- LinkedIn: linkedin.com/in/barrett-taylor-422237182
-
-## Acknowledgments
-
-Special thanks to the open source community for inspiration and resources that helped make this interactive portfolio possible.
+Last updated: March 8, 2025

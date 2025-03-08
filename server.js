@@ -12,11 +12,12 @@ const PORT = process.env.PORT || 3000;
 // Use compression middleware
 app.use(compression());
 
-// MIME type mapping
+// MIME type mapping - updated with more specific JavaScript MIME types
 const MIME_TYPES = {
   '.html': 'text/html',
   '.css': 'text/css',
   '.js': 'application/javascript',
+  '.mjs': 'application/javascript', // Explicitly support ES modules
   '.json': 'application/json',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
@@ -43,6 +44,20 @@ app.get('/service-worker.js', (req, res) => {
   return res.sendFile(path.join(__dirname, 'service-worker.js'));
 });
 
+// Add specific routes for feature JavaScript files to ensure they load as modules
+app.get('/features/*.js', (req, res) => {
+  const filePath = path.join(__dirname, req.path);
+  res.setHeader('Content-Type', 'application/javascript');
+
+  // Check if file exists
+  if (fs.existsSync(filePath)) {
+    return res.sendFile(filePath);
+  } else {
+    console.error(`File not found: ${filePath}`);
+    return res.status(404).send('File not found');
+  }
+});
+
 // Add route for API features
 app.get('/api/features', (req, res) => {
   res.json({
@@ -63,13 +78,19 @@ app.get('/api/features', (req, res) => {
 app.use(express.static(path.join(__dirname), {
   setHeaders: (res, filePath) => {
     const ext = path.extname(filePath).toLowerCase();
+
     if (MIME_TYPES[ext]) {
       res.setHeader('Content-Type', MIME_TYPES[ext]);
     }
 
-    // Special handling for JavaScript modules
+    // Special handling for JavaScript files and modules
     if (ext === '.js') {
       // Ensure all JavaScript files have the proper MIME type
+      res.setHeader('Content-Type', 'application/javascript');
+    }
+
+    // Special handling for module files in the features directory
+    if (filePath.includes('/features/') && ext === '.js') {
       res.setHeader('Content-Type', 'application/javascript');
     }
 
@@ -132,7 +153,7 @@ app.post('/api/send-message', (req, res) => {
 
 // Security headers middleware
 app.use((req, res, next) => {
-  // Content Security Policy
+  // Content Security Policy - updated to allow module scripts
   res.setHeader(
     'Content-Security-Policy',
     "default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; style-src 'self' https://cdnjs.cloudflare.com https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'"
