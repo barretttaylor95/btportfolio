@@ -1,4 +1,3 @@
-
 README Update
 Barrett Taylor Portfolio Website
 Overview
