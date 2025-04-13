@@ -243,14 +243,21 @@
     </div>
 </div>
 
-<!-- Add portfolio-fix.js for additional fallback and stability -->
-<script src="portfolio-fix.js"></script>
-
 <!-- Main JavaScript file for core functionality -->
 <script src="main.js"></script>
 
-<!-- Feature loader for modular functionality -->
-<script src="feature-loader.js"></script>
+<!-- Register service worker -->
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/service-worker.js').then(function(registration) {
+                console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            }, function(err) {
+                console.log('ServiceWorker registration failed: ', err);
+            });
+        });
+    }
+</script>
 
 </body>
 </html>

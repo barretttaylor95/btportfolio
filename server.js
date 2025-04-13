@@ -12,12 +12,12 @@ const PORT = process.env.PORT || 3000;
 // Use compression middleware
 app.use(compression());
 
-// MIME type mapping - explicitly setting the JavaScript MIME type for modules
+// MIME type mapping
 const MIME_TYPES = {
   '.html': 'text/html',
   '.css': 'text/css',
   '.js': 'application/javascript',
-  '.mjs': 'application/javascript', // Explicitly support ES modules
+  '.mjs': 'application/javascript',
   '.json': 'application/json',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
@@ -44,8 +44,7 @@ app.get('/service-worker.js', (req, res) => {
   return res.sendFile(path.join(__dirname, 'service-worker.js'));
 });
 
-// Add specific routes for feature JavaScript files to ensure they load properly as modules
-// This is critical for the ES module system to work
+// Add specific routes for feature JavaScript files to ensure they load properly
 app.get('/features/*.js', (req, res) => {
   const filePath = path.join(__dirname, req.path);
 
@@ -109,7 +108,6 @@ app.get('/api/check-module', (req, res) => {
 });
 
 // Set up middleware for handling JavaScript files with correct MIME types
-// This is crucial for the correct loading of ES modules
 app.use((req, res, next) => {
   if (req.path.endsWith('.js')) {
     res.set('Content-Type', 'application/javascript');
@@ -197,7 +195,7 @@ app.post('/api/send-message', (req, res) => {
 
 // Security headers middleware
 app.use((req, res, next) => {
-  // Content Security Policy - updated to allow module scripts
+  // Content Security Policy
   res.setHeader(
     'Content-Security-Policy',
     "default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; style-src 'self' https://cdnjs.cloudflare.com https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'"
